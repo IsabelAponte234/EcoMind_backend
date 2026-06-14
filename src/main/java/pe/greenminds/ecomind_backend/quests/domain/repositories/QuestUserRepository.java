@@ -12,9 +12,20 @@ public interface QuestUserRepository {
 
     Optional<QuestUser> findByUserIdAndQuestId(Long userId, Long questId);
 
+    List<QuestUser> findByQuestId(Long questId);
+
     boolean existsByUserIdAndQuestId(Long userId, Long questId);
 
+    boolean existsByUserIdAndQuestIdAndStatusAndIdNot(
+            Long userId,
+            Long questId,
+            QuestStatus status,
+            Long excludedQuestUserId
+    );
+
     void deleteById(Long id);
+
+    void deleteByQuestId(Long questId);
 
     List<QuestUser> findByUserIdAndStatus(Long userId, QuestStatus questStatus);
 

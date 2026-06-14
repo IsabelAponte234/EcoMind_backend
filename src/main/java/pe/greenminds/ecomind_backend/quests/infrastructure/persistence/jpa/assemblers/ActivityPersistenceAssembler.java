@@ -13,6 +13,7 @@ public class ActivityPersistenceAssembler {
                 entity.getDescription(),
                 entity.getOrder(),
                 entity.getType(),
+                entity.getActivityConfiguration(),
                 entity.getImage()
         );
     }
@@ -24,6 +25,7 @@ public class ActivityPersistenceAssembler {
         entity.setDescription(activity.getDescription());
         entity.setOrder(activity.getOrder());
         entity.setType(activity.getActivityType());
+        entity.setActivityConfiguration(activity.getActivityConfiguration());
         entity.setImage(activity.getImage());
         return entity;
     }

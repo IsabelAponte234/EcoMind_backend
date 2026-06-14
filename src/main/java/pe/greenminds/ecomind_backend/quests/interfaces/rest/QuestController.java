@@ -13,6 +13,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pe.greenminds.ecomind_backend.quests.application.commandservices.QuestCommandService;
 import pe.greenminds.ecomind_backend.quests.application.queryservices.QuestQueryService;
+import pe.greenminds.ecomind_backend.quests.domain.model.aggregates.Quest;
+import pe.greenminds.ecomind_backend.quests.domain.model.commands.DeleteQuestCommand;
 import pe.greenminds.ecomind_backend.quests.domain.model.queries.GetAllQuestsQuery;
 import pe.greenminds.ecomind_backend.quests.domain.model.queries.GetQuestByIdQuery;
 import pe.greenminds.ecomind_backend.quests.domain.model.queries.SearchQuestQuery;
@@ -21,9 +23,12 @@ import pe.greenminds.ecomind_backend.quests.domain.model.valueobjects.QuestType;
 import pe.greenminds.ecomind_backend.quests.domain.model.valueobjects.Theme;
 import pe.greenminds.ecomind_backend.quests.interfaces.rest.resources.CreateQuestResource;
 import pe.greenminds.ecomind_backend.quests.interfaces.rest.resources.QuestResource;
+import pe.greenminds.ecomind_backend.quests.interfaces.rest.resources.UpdateQuestResource;
 import pe.greenminds.ecomind_backend.quests.interfaces.rest.transform.CreateQuestCommandFromResourceAssembler;
 import pe.greenminds.ecomind_backend.quests.interfaces.rest.transform.QuestResourceFromEntityAssembler;
+import pe.greenminds.ecomind_backend.quests.interfaces.rest.transform.UpdateQuestCommandFromResourceAssembler;
 import pe.greenminds.ecomind_backend.shared.application.result.ApplicationError;
+import pe.greenminds.ecomind_backend.shared.application.result.Result;
 import pe.greenminds.ecomind_backend.shared.interfaces.rest.transform.ErrorResponseAssembler;
 import pe.greenminds.ecomind_backend.shared.interfaces.rest.transform.ResponseEntityAssembler;
 
@@ -121,6 +126,35 @@ public class QuestController {
         return ResponseEntity.ok(resource);
     }
 
+    @PutMapping("/{questId}")
+    @Operation(
+            summary = "Update a quest",
+            description = "Completely updates a quest while preserving its identity and progress"
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Quest updated successfully",
+                    content = @Content(schema = @Schema(implementation = QuestResource.class))
+            ),
+            @ApiResponse(responseCode = "400", description = "Invalid input data"),
+            @ApiResponse(responseCode = "404", description = "Quest not found")
+    })
+    public ResponseEntity<?> updateQuest(
+            @PathVariable Long questId,
+            @Valid @RequestBody UpdateQuestResource resource
+    ) {
+        var command =
+                UpdateQuestCommandFromResourceAssembler.toCommandFromResource(questId, resource);
+        var result = questCommandService.handle(command);
+
+        return ResponseEntityAssembler.toResponseEntityFromResult(
+                result,
+                QuestResourceFromEntityAssembler::toResourceFromEntity,
+                HttpStatus.OK
+        );
+    }
+
     @GetMapping("/search")
     @Operation(
             summary = "Search quests",
@@ -150,5 +184,31 @@ public class QuestController {
                 .map(QuestResourceFromEntityAssembler::toResourceFromEntity)
                 .toList();
         return ResponseEntity.ok(resources);
+    }
+
+    @DeleteMapping("/{questId}")
+    @Operation(
+            summary = "Delete a quest",
+            description = """
+                    Deletes the quest, its activities, all user quest progress,
+                    and all user activity progress in a single transaction.
+                    """
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "204",
+                    description = "Quest and all related data deleted successfully"
+            ),
+            @ApiResponse(responseCode = "404", description = "Quest not found")
+    })
+    public ResponseEntity<?> deleteQuest(@PathVariable Long questId) {
+        var result = questCommandService.handle(new DeleteQuestCommand(questId));
+
+        return switch (result) {
+            case Result.Success<Quest, ApplicationError> ignored ->
+                    ResponseEntity.noContent().build();
+            case Result.Failure<Quest, ApplicationError> failure ->
+                    ErrorResponseAssembler.toErrorResponseFromApplicationError(failure.error());
+        };
     }
 }

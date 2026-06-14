@@ -13,6 +13,7 @@ public interface ActivityRepository {
 
     Activity save(Activity activity);
     void deleteById(Long id);
+    void deleteByQuestId(Long questId);
 
     Integer countByQuestId(Long questId);
 }

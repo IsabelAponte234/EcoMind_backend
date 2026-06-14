@@ -13,6 +13,7 @@ public class ActivityResourceFromEntityAssembler {
                 activity.getDescription(),
                 activity.getOrder(),
                 activity.getActivityType(),
+                activity.getActivityConfiguration(),
                 activity.getImage()
         );
     }

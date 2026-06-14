@@ -54,6 +54,11 @@ public class ActivityRepositoryImpl implements ActivityRepository {
     }
 
     @Override
+    public void deleteByQuestId(Long questId) {
+        activityPersistenceRepository.deleteByQuestId(questId);
+    }
+
+    @Override
     public Integer countByQuestId(Long questId) {
         return activityPersistenceRepository.countByQuestId(questId);
     }

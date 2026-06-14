@@ -80,4 +80,30 @@ public class Quest extends AbstractDomainAggregateRoot<Quest>{
     public void onCreated() {
         registerDomainEvent(QuestCreatedEvent.from(this));
     }
+
+    public void update(
+            Long minigameId,
+            String title,
+            Category category,
+            String description,
+            QuestType type,
+            Integer age,
+            Reward reward,
+            Integer time,
+            String image,
+            Theme theme,
+            LocalDate assignedDate
+    ) {
+        this.minigameId = minigameId;
+        this.title = Objects.requireNonNull(title, "title must not be null");
+        this.category = Objects.requireNonNull(category, "category must not be null");
+        this.description = Objects.requireNonNull(description, "description must not be null");
+        this.type = Objects.requireNonNull(type, "type must not be null");
+        this.age = age;
+        this.reward = Objects.requireNonNull(reward, "reward must not be null");
+        this.time = time;
+        this.image = image;
+        this.theme = Objects.requireNonNull(theme, "theme must not be null");
+        this.assignedDate = assignedDate;
+    }
 }

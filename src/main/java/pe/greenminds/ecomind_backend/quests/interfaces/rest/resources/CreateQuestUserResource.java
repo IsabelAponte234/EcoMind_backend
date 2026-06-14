@@ -6,7 +6,10 @@ import jakarta.validation.constraints.Positive;
 
 @Schema(
         name = "CreateQuestUserRequest",
-        description = "Request payload for assigning a quest to a user",
+        description = """
+                Request payload for assigning a quest to a user.
+                The quest activities are assigned automatically to the new quest user.
+                """,
         example = """
         {
           "userId": 1,
@@ -27,7 +30,13 @@ public record CreateQuestUserResource(
         Long questId,
 
         @Positive
-        @Schema(description = "Optional collaborative session identifier", example = "1")
+        @Schema(
+                description = """
+                        Optional collaborative session identifier propagated to the
+                        automatically created activity assignments.
+                        """,
+                example = "1"
+        )
         Long collaborativeSessionId
 ) {
 }
