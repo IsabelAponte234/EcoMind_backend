@@ -20,8 +20,7 @@ public class PostQueryServiceImpl implements PostQueryService {
     public List<Post> handle(SearchPostsQuery query) {
         return postRepository.search(
                 query.communityId(),
-                query.userId(),
-                query.content()
+                query.userId()
         );
     }
 }

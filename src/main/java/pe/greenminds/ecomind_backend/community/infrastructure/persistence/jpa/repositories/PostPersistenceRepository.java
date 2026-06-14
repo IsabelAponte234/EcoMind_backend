@@ -12,14 +12,12 @@ import java.util.List;
 public interface PostPersistenceRepository extends JpaRepository<PostPersistenceEntity, Long> {
 
     @Query("""
-        SELECT p FROM PostPersistenceEntity p
-        WHERE (:communityId IS NULL OR p.communityId = :communityId)
-          AND (:userId IS NULL OR p.userId = :userId)
-          AND (:content IS NULL OR LOWER(p.content) LIKE LOWER(CONCAT('%', :content, '%')))
-    """)
+    SELECT p FROM PostPersistenceEntity p
+    WHERE (:communityId IS NULL OR p.communityId = :communityId)
+      AND (:userId IS NULL OR p.userId = :userId)
+""")
     List<PostPersistenceEntity> search(
             @Param("communityId") Long communityId,
-            @Param("userId") Long userId,
-            @Param("content") String content
+            @Param("userId") Long userId
     );
 }

@@ -23,9 +23,9 @@ public class PostRepositoryImpl implements PostRepository {
     }
 
     @Override
-    public List<Post> search(Long communityId, Long userId, String content){
+    public List<Post> search(Long communityId, Long userId) {
         return postPersistenceRepository
-                .search(communityId, userId, content)
+                .search(communityId, userId)
                 .stream()
                 .map(PostPersistenceAssembler::toDomainFromPersistence)
                 .toList();

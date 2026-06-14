@@ -1,7 +1,6 @@
 package pe.greenminds.ecomind_backend.community.infrastructure.persistence.jpa.assemblers;
 
 import pe.greenminds.ecomind_backend.community.domain.model.aggregates.Post;
-import pe.greenminds.ecomind_backend.community.infrastructure.persistence.jpa.entities.EventPersistenceEntity;
 import pe.greenminds.ecomind_backend.community.infrastructure.persistence.jpa.entities.PostPersistenceEntity;
 
 import java.time.LocalDateTime;
