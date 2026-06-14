@@ -45,16 +45,12 @@ public class ActivityController {
     @PostMapping
     @Operation(
             summary="Create a new activity",
-            description = """
-                    Creates a new activity linked to a quest. It also creates an
-                    ActivityUser with zero progress for every user who already has
-                    the quest assigned, except users who have already completed it.
-                    """
+            description = "Creates an activity for a quest"
     )
     @ApiResponses(value={
             @ApiResponse(
                     responseCode = "201",
-                    description = "Activity and related user assignments created successfully",
+                    description = "Activity created",
                     content = @Content(schema = @Schema(implementation = ActivityResource.class))
             ),
             @ApiResponse(responseCode = "400", description = "Invalid input data"),

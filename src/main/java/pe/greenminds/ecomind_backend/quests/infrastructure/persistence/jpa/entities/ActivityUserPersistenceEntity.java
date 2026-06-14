@@ -3,9 +3,12 @@ package pe.greenminds.ecomind_backend.quests.infrastructure.persistence.jpa.enti
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import pe.greenminds.ecomind_backend.shared.infrastructure.persistence.jpa.entities.AuditableAbstractPersistenceEntity;
 
 import java.time.LocalDate;
+import java.util.Map;
 
 @Entity
 @Table(name = "activity_user")
@@ -21,6 +24,13 @@ public class ActivityUserPersistenceEntity extends AuditableAbstractPersistenceE
 
     @Column(name="endDate")
     private LocalDate endDate;
+
+    @Column(name = "activity_description")
+    private String activityDescription;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "activity_configuration", columnDefinition = "jsonb")
+    private Map<String, Object> activityConfiguration;
 
     @Column(name="collaborativeSession_id")
     private Long collaborativeSessionId;
@@ -55,6 +65,22 @@ public class ActivityUserPersistenceEntity extends AuditableAbstractPersistenceE
 
     public void setEndDate(LocalDate endDate) {
         this.endDate = endDate;
+    }
+
+    public String getActivityDescription() {
+        return activityDescription;
+    }
+
+    public void setActivityDescription(String activityDescription) {
+        this.activityDescription = activityDescription;
+    }
+
+    public Map<String, Object> getActivityConfiguration() {
+        return activityConfiguration;
+    }
+
+    public void setActivityConfiguration(Map<String, Object> activityConfiguration) {
+        this.activityConfiguration = activityConfiguration;
     }
 
     public Long getCollaborativeSessionId() {

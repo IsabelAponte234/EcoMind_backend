@@ -6,6 +6,9 @@ import pe.greenminds.ecomind_backend.quests.domain.model.events.ActivityUserCrea
 import pe.greenminds.ecomind_backend.shared.domain.model.aggregates.AbstractDomainAggregateRoot;
 
 import java.time.LocalDate;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Objects;
 
 public class ActivityUser extends AbstractDomainAggregateRoot<ActivityUser> {
@@ -18,32 +21,84 @@ public class ActivityUser extends AbstractDomainAggregateRoot<ActivityUser> {
     private Long activityId;
     private Double progress;
     private LocalDate endDate;
+    private String activityDescription;
+    private Map<String, Object> activityConfiguration;
     private Long collaborativeSessionId;
 
-    public ActivityUser(Long id, Long userId, Long activityId,  Double progress, LocalDate endDate, Long collaborativeSessionId) {
+    public ActivityUser(
+            Long id,
+            Long userId,
+            Long activityId,
+            Double progress,
+            LocalDate endDate,
+            String activityDescription,
+            Map<String, Object> activityConfiguration,
+            Long collaborativeSessionId
+    ) {
         this.id = id;
         this.questUserId = Objects.requireNonNull(userId, "User ID cannot be null");
         this.activityId = Objects.requireNonNull(activityId, "Activity ID cannot be null");
         this.progress = progress;
         this.endDate = endDate;
+        this.activityDescription = activityDescription;
+        this.activityConfiguration = copyConfiguration(activityConfiguration);
         this.collaborativeSessionId = collaborativeSessionId;
     }
 
-    public ActivityUser(Long id, Long userId, Long activityId, Long collaborativeSessionId) {
+    public ActivityUser(
+            Long id,
+            Long userId,
+            Long activityId,
+            String activityDescription,
+            Map<String, Object> activityConfiguration,
+            Long collaborativeSessionId
+    ) {
         this.id = id;
         this.questUserId = Objects.requireNonNull(userId, "User ID cannot be null");
         this.activityId = Objects.requireNonNull(activityId, "Activity ID cannot be null");
         this.progress = 0.0;
         this.endDate = null;
+        this.activityDescription = activityDescription;
+        this.activityConfiguration = copyConfiguration(activityConfiguration);
         this.collaborativeSessionId = collaborativeSessionId;
     }
 
-    public ActivityUser(Long userId, Long activityId,  Double progress, LocalDate endDate, Long collaborativeSessionId) {
-        this(null, userId, activityId, progress, endDate, collaborativeSessionId);
+    public ActivityUser(
+            Long userId,
+            Long activityId,
+            Double progress,
+            LocalDate endDate,
+            String activityDescription,
+            Map<String, Object> activityConfiguration,
+            Long collaborativeSessionId
+    ) {
+        this(
+                null,
+                userId,
+                activityId,
+                progress,
+                endDate,
+                activityDescription,
+                activityConfiguration,
+                collaborativeSessionId
+        );
     }
 
-    public ActivityUser(Long userId, Long activityId, Long collaborativeSessionId) {
-        this(null, userId, activityId, collaborativeSessionId);
+    public ActivityUser(
+            Long userId,
+            Long activityId,
+            String activityDescription,
+            Map<String, Object> activityConfiguration,
+            Long collaborativeSessionId
+    ) {
+        this(
+                null,
+                userId,
+                activityId,
+                activityDescription,
+                activityConfiguration,
+                collaborativeSessionId
+        );
     }
 
     public void onCreated(){
@@ -61,6 +116,8 @@ public class ActivityUser extends AbstractDomainAggregateRoot<ActivityUser> {
 
         if (progress >= 100.0) {
             complete();
+        } else {
+            this.endDate = null;
         }
     }
 
@@ -85,7 +142,24 @@ public class ActivityUser extends AbstractDomainAggregateRoot<ActivityUser> {
         return endDate;
     }
 
+    public String getActivityDescription() {
+        return activityDescription;
+    }
+
+    public Map<String, Object> getActivityConfiguration() {
+        return activityConfiguration;
+    }
+
     public Long getCollaborativeSessionId() {
         return collaborativeSessionId;
+    }
+
+    private static Map<String, Object> copyConfiguration(
+            Map<String, Object> activityConfiguration
+    ) {
+        if (activityConfiguration == null) {
+            return null;
+        }
+        return Collections.unmodifiableMap(new LinkedHashMap<>(activityConfiguration));
     }
 }

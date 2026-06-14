@@ -18,8 +18,10 @@ import pe.greenminds.ecomind_backend.quests.domain.model.queries.GetActivityUser
 import pe.greenminds.ecomind_backend.quests.domain.model.queries.GetActivityUsersByQuestUserIdQuery;
 import pe.greenminds.ecomind_backend.quests.interfaces.rest.resources.ActivityUserResource;
 import pe.greenminds.ecomind_backend.quests.interfaces.rest.resources.CreateActivityUserResource;
+import pe.greenminds.ecomind_backend.quests.interfaces.rest.resources.SubmitActivityUserResource;
 import pe.greenminds.ecomind_backend.quests.interfaces.rest.transform.ActivityUserResourceFromEntityAssembler;
 import pe.greenminds.ecomind_backend.quests.interfaces.rest.transform.CreateActivityUserCommandFromResourceAssembler;
+import pe.greenminds.ecomind_backend.quests.interfaces.rest.transform.SubmitActivityUserCommandFromResourceAssembler;
 import pe.greenminds.ecomind_backend.shared.application.result.ApplicationError;
 import pe.greenminds.ecomind_backend.shared.interfaces.rest.transform.ErrorResponseAssembler;
 import pe.greenminds.ecomind_backend.shared.interfaces.rest.transform.ResponseEntityAssembler;
@@ -67,6 +69,38 @@ public class ActivityUserController {
                 result,
                 ActivityUserResourceFromEntityAssembler::toResourceFromEntity,
                 HttpStatus.CREATED
+        );
+    }
+
+    @PostMapping("/{activityUserId}/submit")
+    @Operation(
+            summary = "Submit progress for an activity",
+            description = "For CHECKBOX activities, send {\"data\":{\"checked\":true}}"
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Activity submitted",
+                    content = @Content(schema = @Schema(implementation = ActivityUserResource.class))
+            ),
+            @ApiResponse(responseCode = "400", description = "Invalid submission data"),
+            @ApiResponse(responseCode = "404", description = "Activity assignment not found"),
+            @ApiResponse(responseCode = "422", description = "Submission is not allowed")
+    })
+    public ResponseEntity<?> submitActivity(
+            @PathVariable Long activityUserId,
+            @Valid @RequestBody SubmitActivityUserResource resource
+    ) {
+        var command = SubmitActivityUserCommandFromResourceAssembler.toCommandFromResource(
+                activityUserId,
+                resource
+        );
+        var result = activityUserCommandService.handle(command);
+
+        return ResponseEntityAssembler.toResponseEntityFromResult(
+                result,
+                ActivityUserResourceFromEntityAssembler::toResourceFromEntity,
+                HttpStatus.OK
         );
     }
 

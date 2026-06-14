@@ -4,15 +4,12 @@ import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 import pe.greenminds.ecomind_backend.quests.application.commandservices.ActivityCommandService;
 import pe.greenminds.ecomind_backend.quests.domain.model.aggregates.Activity;
-import pe.greenminds.ecomind_backend.quests.domain.model.aggregates.ActivityUser;
 import pe.greenminds.ecomind_backend.quests.domain.model.commands.CreateActivityCommand;
 import pe.greenminds.ecomind_backend.quests.domain.model.commands.DeleteActivityCommand;
 import pe.greenminds.ecomind_backend.quests.domain.model.commands.UpdateActivityCommand;
-import pe.greenminds.ecomind_backend.quests.domain.model.valueobjects.QuestStatus;
 import pe.greenminds.ecomind_backend.quests.domain.repositories.ActivityRepository;
 import pe.greenminds.ecomind_backend.quests.domain.repositories.ActivityUserRepository;
 import pe.greenminds.ecomind_backend.quests.domain.repositories.QuestRepository;
-import pe.greenminds.ecomind_backend.quests.domain.repositories.QuestUserRepository;
 import pe.greenminds.ecomind_backend.shared.application.result.ApplicationError;
 import pe.greenminds.ecomind_backend.shared.application.result.Result;
 
@@ -23,18 +20,15 @@ public class ActivityCommandServiceImpl implements ActivityCommandService {
     private final ActivityRepository activityRepository;
     private final QuestRepository questRepository;
     private final ActivityUserRepository activityUserRepository;
-    private final QuestUserRepository questUserRepository;
 
     public ActivityCommandServiceImpl(
             final ActivityRepository activityRepository,
             final QuestRepository questRepository,
-            final ActivityUserRepository activityUserRepository,
-            final QuestUserRepository questUserRepository
+            final ActivityUserRepository activityUserRepository
     ) {
         this.activityRepository = activityRepository;
         this.questRepository = questRepository;
         this.activityUserRepository = activityUserRepository;
-        this.questUserRepository = questUserRepository;
     }
 
     @Override
@@ -63,28 +57,10 @@ public class ActivityCommandServiceImpl implements ActivityCommandService {
                     command.description(),
                     finalOrder,
                     command.type(),
+                    command.activityConfiguration(),
                     command.image()
             );
             var savedActivity = activityRepository.save(activity);
-
-            var questUsers = questUserRepository.findByQuestId(command.questId());
-            questUsers.stream()
-                    .filter(questUser -> questUser.getStatus() != QuestStatus.COMPLETED)
-                    .filter(questUser ->
-                            !activityUserRepository.existsByQuestUserIdAndActivityId(
-                                    questUser.getId(),
-                                    savedActivity.getId()
-                            )
-                    )
-                    .forEach(questUser ->
-                            activityUserRepository.save(
-                                    new ActivityUser(
-                                            questUser.getId(),
-                                            savedActivity.getId(),
-                                            questUser.getCollaborativeSessionId()
-                                    )
-                            )
-                    );
 
             return Result.success(savedActivity);
         } catch(IllegalArgumentException e){
@@ -197,6 +173,7 @@ public class ActivityCommandServiceImpl implements ActivityCommandService {
                     command.description(),
                     finalOrder,
                     command.type(),
+                    command.activityConfiguration(),
                     command.image()
             );
 

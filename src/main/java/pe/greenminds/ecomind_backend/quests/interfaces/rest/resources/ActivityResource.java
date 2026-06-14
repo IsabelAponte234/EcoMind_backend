@@ -5,6 +5,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import pe.greenminds.ecomind_backend.quests.domain.model.valueobjects.ActivityType;
 
+import java.util.Map;
+
 @Schema(
         name="ActivityResponse",
         description = "Activity information response",
@@ -15,7 +17,8 @@ import pe.greenminds.ecomind_backend.quests.domain.model.valueobjects.ActivityTy
           "description": "Check the rooms",
           "order": 1,
           "type": "CHECKBOX",
-          "image_url": null
+          "activityConfiguration": null,
+          "image": null
         }
         """
 )
@@ -34,6 +37,9 @@ public record ActivityResource(
 
         @Schema(description = "Type of activity", example = "CHECKBOX")
         ActivityType type,
+
+        @Schema(description = "Configuration for the activity type", nullable = true)
+        Map<String, Object> activityConfiguration,
 
         @Schema(description = "Image url for individual activity", example = "null")
         String image

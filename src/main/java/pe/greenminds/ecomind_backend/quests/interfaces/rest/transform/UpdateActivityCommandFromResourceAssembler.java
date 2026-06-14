@@ -16,6 +16,7 @@ public final class UpdateActivityCommandFromResourceAssembler {
                 resource.description(),
                 resource.order(),
                 resource.type(),
+                resource.activityConfiguration(),
                 resource.image()
         );
     }

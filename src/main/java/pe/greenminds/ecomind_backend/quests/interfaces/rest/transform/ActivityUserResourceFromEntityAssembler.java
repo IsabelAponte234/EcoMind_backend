@@ -14,6 +14,8 @@ public final class ActivityUserResourceFromEntityAssembler {
                 activityUser.getActivityId(),
                 activityUser.getProgress(),
                 activityUser.getEndDate(),
+                activityUser.getActivityDescription(),
+                activityUser.getActivityConfiguration(),
                 activityUser.getCollaborativeSessionId()
         );
     }

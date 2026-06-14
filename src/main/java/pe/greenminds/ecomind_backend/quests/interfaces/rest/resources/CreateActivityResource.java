@@ -5,20 +5,19 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import pe.greenminds.ecomind_backend.quests.domain.model.valueobjects.ActivityType;
 
+import java.util.Map;
+
 @Schema(
         name = "CreateActivityRequest",
-        description = """
-                Request payload for creating a new activity. The activity is automatically
-                assigned to users who have the related quest in progress, but not to users
-                who have already completed it.
-                """,
+        description = "Data required to create an activity",
         example = """
         {
               "questId": 1,
               "description": "Check the rooms",
               "order": 1,
               "type": "CHECKBOX",
-              "image_url": null
+              "activityConfiguration": null,
+              "image": null
         }
         """
 )
@@ -38,6 +37,13 @@ public record CreateActivityResource(
         @NotNull
         @Schema(description = "Type of activity")
         ActivityType type,
+
+        @Schema(
+                description = "Configuration for the activity type",
+                example = "{}",
+                nullable = true
+        )
+        Map<String, Object> activityConfiguration,
 
         @Schema(description = "Image url for individual activity")
         String image

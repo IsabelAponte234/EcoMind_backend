@@ -14,6 +14,7 @@ public class CreateActivityCommandFromResourceAssembler {
                 resource.description(),
                 resource.order(),
                 resource.type(),
+                resource.activityConfiguration(),
                 resource.image()
         );
     }

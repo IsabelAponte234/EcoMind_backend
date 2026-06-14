@@ -14,6 +14,8 @@ public final class ActivityUserPersistenceAssembler {
                 entity.getActivityId(),
                 entity.getProgress(),
                 entity.getEndDate(),
+                entity.getActivityDescription(),
+                entity.getActivityConfiguration(),
                 entity.getCollaborativeSessionId()
         );
     }
@@ -25,6 +27,8 @@ public final class ActivityUserPersistenceAssembler {
         entity.setActivityId(activityUser.getActivityId());
         entity.setProgress(activityUser.getProgress());
         entity.setEndDate(activityUser.getEndDate());
+        entity.setActivityDescription(activityUser.getActivityDescription());
+        entity.setActivityConfiguration(activityUser.getActivityConfiguration());
         entity.setCollaborativeSessionId(activityUser.getCollaborativeSessionId());
         return entity;
     }

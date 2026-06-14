@@ -5,6 +5,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import pe.greenminds.ecomind_backend.quests.domain.model.valueobjects.ActivityType;
 
+import java.util.Map;
+
 @Schema(
         name = "UpdateActivityRequest",
         description = "Complete activity update payload"
@@ -19,6 +21,13 @@ public record UpdateActivityResource(
         @NotNull
         @Schema(description = "Current activity type; changing it is not allowed")
         ActivityType type,
+
+        @Schema(
+                description = "Configuration for the activity type",
+                example = "{}",
+                nullable = true
+        )
+        Map<String, Object> activityConfiguration,
 
         String image
 ) {

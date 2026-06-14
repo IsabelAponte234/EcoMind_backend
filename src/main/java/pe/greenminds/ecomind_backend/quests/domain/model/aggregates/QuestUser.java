@@ -63,11 +63,24 @@ public class QuestUser extends AbstractDomainAggregateRoot<QuestUser> {
         this.progress = progress;
 
         if (progress >= 100.0) {
-            complete();
+            readyToComplete();
+        } else if (this.status != QuestStatus.COMPLETED) {
+            this.status = QuestStatus.IN_PROGRESS;
+            this.endDate = null;
         }
     }
 
-    private void complete() {
+    private void readyToComplete() {
+        this.progress = 100.0;
+        this.status = QuestStatus.READY_TO_COMPLETE;
+        this.endDate = null;
+    }
+
+    public void complete() {
+        if (this.status != QuestStatus.READY_TO_COMPLETE) {
+            throw new IllegalStateException("Quest status must be READY_TO_COMPLETE");
+        }
+
         this.progress = 100.0;
         this.status = QuestStatus.COMPLETED;
         this.endDate = LocalDate.now();

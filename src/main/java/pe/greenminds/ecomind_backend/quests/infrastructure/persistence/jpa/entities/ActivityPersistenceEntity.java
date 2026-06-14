@@ -2,8 +2,12 @@ package pe.greenminds.ecomind_backend.quests.infrastructure.persistence.jpa.enti
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Positive;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import pe.greenminds.ecomind_backend.quests.domain.model.valueobjects.ActivityType;
 import pe.greenminds.ecomind_backend.shared.infrastructure.persistence.jpa.entities.AuditableAbstractPersistenceEntity;
+
+import java.util.Map;
 
 @Entity
 @Table(name="activities")
@@ -22,6 +26,10 @@ public class ActivityPersistenceEntity extends AuditableAbstractPersistenceEntit
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable=false)
     private ActivityType type;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "activity_configuration", columnDefinition = "jsonb")
+    private Map<String, Object> activityConfiguration;
 
     @Column(name = "image")
     private String image;
@@ -56,6 +64,14 @@ public class ActivityPersistenceEntity extends AuditableAbstractPersistenceEntit
 
     public void setType(ActivityType type) {
         this.type = type;
+    }
+
+    public Map<String, Object> getActivityConfiguration() {
+        return activityConfiguration;
+    }
+
+    public void setActivityConfiguration(Map<String, Object> activityConfiguration) {
+        this.activityConfiguration = activityConfiguration;
     }
 
     public String getImage() {

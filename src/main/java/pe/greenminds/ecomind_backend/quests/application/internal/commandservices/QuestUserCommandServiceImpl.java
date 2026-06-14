@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import pe.greenminds.ecomind_backend.quests.application.commandservices.QuestUserCommandService;
 import pe.greenminds.ecomind_backend.quests.domain.model.aggregates.ActivityUser;
 import pe.greenminds.ecomind_backend.quests.domain.model.aggregates.QuestUser;
+import pe.greenminds.ecomind_backend.quests.domain.model.commands.CompleteQuestUserCommand;
 import pe.greenminds.ecomind_backend.quests.domain.model.commands.CreateQuestUserCommand;
 import pe.greenminds.ecomind_backend.quests.domain.model.commands.DeleteQuestUserCommand;
 import pe.greenminds.ecomind_backend.quests.domain.repositories.ActivityRepository;
@@ -69,6 +70,8 @@ public class QuestUserCommandServiceImpl implements QuestUserCommandService {
                             new ActivityUser(
                                     savedQuestUser.getId(),
                                     activity.getId(),
+                                    activity.getDescription(),
+                                    activity.getActivityConfiguration(),
                                     savedQuestUser.getCollaborativeSessionId()
                             )
                     );
@@ -102,5 +105,29 @@ public class QuestUserCommandServiceImpl implements QuestUserCommandService {
         activityUserRepository.deleteByQuestUserId(command.questUserId());
         questUserRepository.deleteById(command.questUserId());
         return Result.success(questUser.get());
+    }
+
+    @Transactional
+    @Override
+    public Result<QuestUser, ApplicationError> handle(CompleteQuestUserCommand command) {
+        var questUser = questUserRepository.findById(command.questUserId());
+
+        if (questUser.isEmpty()) {
+            return Result.failure(
+                    ApplicationError.notFound("QuestUser", command.questUserId().toString())
+            );
+        }
+
+        try {
+            questUser.get().complete();
+            return Result.success(questUserRepository.save(questUser.get()));
+        } catch (IllegalStateException exception) {
+            return Result.failure(
+                    ApplicationError.businessRuleViolation(
+                            "Quest is not ready to complete",
+                            exception.getMessage()
+                    )
+            );
+        }
     }
 }
