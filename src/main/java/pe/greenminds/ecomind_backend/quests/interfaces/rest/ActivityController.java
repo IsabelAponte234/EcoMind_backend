@@ -13,14 +13,18 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pe.greenminds.ecomind_backend.quests.application.commandservices.ActivityCommandService;
 import pe.greenminds.ecomind_backend.quests.application.queryservices.ActivityQueryService;
+import pe.greenminds.ecomind_backend.quests.domain.model.aggregates.Activity;
+import pe.greenminds.ecomind_backend.quests.domain.model.commands.DeleteActivityCommand;
 import pe.greenminds.ecomind_backend.quests.domain.model.queries.GetActivitiesByQuestIdQuery;
 import pe.greenminds.ecomind_backend.quests.domain.model.queries.GetActivityByIdQuery;
 import pe.greenminds.ecomind_backend.quests.interfaces.rest.resources.ActivityResource;
 import pe.greenminds.ecomind_backend.quests.interfaces.rest.resources.CreateActivityResource;
+import pe.greenminds.ecomind_backend.quests.interfaces.rest.resources.UpdateActivityResource;
 import pe.greenminds.ecomind_backend.quests.interfaces.rest.transform.ActivityResourceFromEntityAssembler;
 import pe.greenminds.ecomind_backend.quests.interfaces.rest.transform.CreateActivityCommandFromResourceAssembler;
-import pe.greenminds.ecomind_backend.quests.interfaces.rest.transform.QuestResourceFromEntityAssembler;
+import pe.greenminds.ecomind_backend.quests.interfaces.rest.transform.UpdateActivityCommandFromResourceAssembler;
 import pe.greenminds.ecomind_backend.shared.application.result.ApplicationError;
+import pe.greenminds.ecomind_backend.shared.application.result.Result;
 import pe.greenminds.ecomind_backend.shared.interfaces.rest.transform.ErrorResponseAssembler;
 import pe.greenminds.ecomind_backend.shared.interfaces.rest.transform.ResponseEntityAssembler;
 
@@ -41,12 +45,16 @@ public class ActivityController {
     @PostMapping
     @Operation(
             summary="Create a new activity",
-            description="Creates a new activity linked to a quest"
+            description = """
+                    Creates a new activity linked to a quest. It also creates an
+                    ActivityUser with zero progress for every user who already has
+                    the quest assigned, except users who have already completed it.
+                    """
     )
     @ApiResponses(value={
             @ApiResponse(
                     responseCode = "201",
-                    description = "Activity created succesfully",
+                    description = "Activity and related user assignments created successfully",
                     content = @Content(schema = @Schema(implementation = ActivityResource.class))
             ),
             @ApiResponse(responseCode = "400", description = "Invalid input data"),
@@ -96,6 +104,40 @@ public class ActivityController {
         return ResponseEntity.ok(resource);
     }
 
+    @PutMapping("/{activityId}")
+    @Operation(
+            summary = "Update an activity",
+            description = """
+                    Completely updates an activity. If its position changes, the other
+                    activities in the quest are reordered automatically. The activity
+                    type cannot be changed; it must be deleted and recreated instead.
+                    """
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Activity updated successfully",
+                    content = @Content(schema = @Schema(implementation = ActivityResource.class))
+            ),
+            @ApiResponse(responseCode = "400", description = "Invalid input data"),
+            @ApiResponse(responseCode = "404", description = "Activity not found"),
+            @ApiResponse(responseCode = "422", description = "Activity type cannot be changed")
+    })
+    public ResponseEntity<?> updateActivity(
+            @PathVariable Long activityId,
+            @Valid @RequestBody UpdateActivityResource resource
+    ) {
+        var command = UpdateActivityCommandFromResourceAssembler
+                .toCommandFromResource(activityId, resource);
+        var result = activityCommandService.handle(command);
+
+        return ResponseEntityAssembler.toResponseEntityFromResult(
+                result,
+                ActivityResourceFromEntityAssembler::toResourceFromEntity,
+                HttpStatus.OK
+        );
+    }
+
     @GetMapping("/quest/{questId}")
     @Operation(
             summary = "Get all activities from one quest",
@@ -112,5 +154,32 @@ public class ActivityController {
                 .map(ActivityResourceFromEntityAssembler::toResourceFromEntity)
                 .toList();
         return ResponseEntity.ok(resources);
+    }
+
+    @DeleteMapping("/{activityId}")
+    @Operation(
+            summary = "Delete an activity",
+            description = """
+                    Deletes an activity and all ActivityUser progress records associated
+                    with it in a single transaction. Remaining activities are reordered
+                    to keep their positions consecutive.
+                    """
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "204",
+                    description = "Activity and related user progress deleted successfully"
+            ),
+            @ApiResponse(responseCode = "404", description = "Activity not found")
+    })
+    public ResponseEntity<?> deleteActivity(@PathVariable Long activityId) {
+        var result = activityCommandService.handle(new DeleteActivityCommand(activityId));
+
+        return switch (result) {
+            case Result.Success<Activity, ApplicationError> ignored ->
+                    ResponseEntity.noContent().build();
+            case Result.Failure<Activity, ApplicationError> failure ->
+                    ErrorResponseAssembler.toErrorResponseFromApplicationError(failure.error());
+        };
     }
 }

@@ -13,6 +13,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pe.greenminds.ecomind_backend.quests.application.commandservices.QuestUserCommandService;
 import pe.greenminds.ecomind_backend.quests.application.queryservices.QuestUserQueryService;
+import pe.greenminds.ecomind_backend.quests.domain.model.aggregates.QuestUser;
+import pe.greenminds.ecomind_backend.quests.domain.model.commands.DeleteQuestUserCommand;
 import pe.greenminds.ecomind_backend.quests.domain.model.queries.GetQuestUserByIdQuery;
 import pe.greenminds.ecomind_backend.quests.domain.model.queries.GetQuestUserByUserIdAndQuestIdQuery;
 import pe.greenminds.ecomind_backend.quests.domain.model.queries.GetQuestUsersByUserIdAndStatusQuery;
@@ -22,6 +24,7 @@ import pe.greenminds.ecomind_backend.quests.interfaces.rest.resources.QuestUserR
 import pe.greenminds.ecomind_backend.quests.interfaces.rest.transform.CreateQuestUserCommandFromResourceAssembler;
 import pe.greenminds.ecomind_backend.quests.interfaces.rest.transform.QuestUserResourceFromEntityAssembler;
 import pe.greenminds.ecomind_backend.shared.application.result.ApplicationError;
+import pe.greenminds.ecomind_backend.shared.application.result.Result;
 import pe.greenminds.ecomind_backend.shared.interfaces.rest.transform.ErrorResponseAssembler;
 import pe.greenminds.ecomind_backend.shared.interfaces.rest.transform.ResponseEntityAssembler;
 
@@ -45,12 +48,16 @@ public class QuestUserController {
     @PostMapping
     @Operation(
             summary = "Assign a quest to a user",
-            description = "Creates a quest assignment with IN_PROGRESS status and zero progress"
+            description = """
+                    Creates a quest assignment with IN_PROGRESS status and zero progress.
+                    It also creates an ActivityUser with zero progress for each activity
+                    belonging to the assigned quest.
+                    """
     )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "201",
-                    description = "Quest assigned successfully",
+                    description = "Quest and its activity assignments created successfully",
                     content = @Content(schema = @Schema(implementation = QuestUserResource.class))
             ),
             @ApiResponse(responseCode = "400", description = "Invalid input data"),
@@ -124,5 +131,31 @@ public class QuestUserController {
                 .toList();
 
         return ResponseEntity.ok(resources);
+    }
+
+    @DeleteMapping("/{questUserId}")
+    @Operation(
+            summary = "Delete a user's quest assignment",
+            description = """
+                    Deletes the quest assignment and all ActivityUser records associated
+                    with it in a single transaction.
+                    """
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "204",
+                    description = "Quest assignment and activity assignments deleted successfully"
+            ),
+            @ApiResponse(responseCode = "404", description = "Quest assignment not found")
+    })
+    public ResponseEntity<?> deleteQuestUser(@PathVariable Long questUserId) {
+        var result = questUserCommandService.handle(new DeleteQuestUserCommand(questUserId));
+
+        return switch (result) {
+            case Result.Success<QuestUser, ApplicationError> ignored ->
+                    ResponseEntity.noContent().build();
+            case Result.Failure<QuestUser, ApplicationError> failure ->
+                    ErrorResponseAssembler.toErrorResponseFromApplicationError(failure.error());
+        };
     }
 }

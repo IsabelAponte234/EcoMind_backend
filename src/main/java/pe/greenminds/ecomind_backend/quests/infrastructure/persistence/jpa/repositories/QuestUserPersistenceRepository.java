@@ -15,10 +15,21 @@ public interface QuestUserPersistenceRepository extends JpaRepository<QuestUserP
             Long questId
     );
 
+    List<QuestUserPersistenceEntity> findByQuestId(Long questId);
+
     boolean existsByUserIdAndQuestId(
             Long userId,
             Long questId
     );
+
+    boolean existsByUserIdAndQuestIdAndStatusAndIdNot(
+            Long userId,
+            Long questId,
+            QuestStatus status,
+            Long excludedQuestUserId
+    );
+
+    void deleteByQuestId(Long questId);
 
     List<QuestUserPersistenceEntity> findByUserIdAndStatus(
             Long userId,

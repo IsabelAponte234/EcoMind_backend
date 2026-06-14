@@ -7,7 +7,11 @@ import pe.greenminds.ecomind_backend.quests.domain.model.valueobjects.ActivityTy
 
 @Schema(
         name = "CreateActivityRequest",
-        description = "Request payload for creating a new activity",
+        description = """
+                Request payload for creating a new activity. The activity is automatically
+                assigned to users who have the related quest in progress, but not to users
+                who have already completed it.
+                """,
         example = """
         {
               "questId": 1,

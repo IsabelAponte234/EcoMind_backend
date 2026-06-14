@@ -49,6 +49,22 @@ public class Activity extends AbstractDomainAggregateRoot {
         registerDomainEvent(ActivityCreatedEvent.from(this));
     }
 
+    public void update(
+            String description,
+            Integer order,
+            ActivityType activityType,
+            String image
+    ) {
+        this.description = description;
+        this.order = Objects.requireNonNull(order, "Order is required");
+        this.activityType = Objects.requireNonNull(activityType, "ActivityType is required");
+        this.image = image;
+
+        if (order < 1) {
+            throw new IllegalArgumentException("Order must be more or equal to 1");
+        }
+    }
+
     public Long getQuestId() {
         return questId;
     }

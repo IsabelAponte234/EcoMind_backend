@@ -53,6 +53,26 @@ public class QuestUser extends AbstractDomainAggregateRoot<QuestUser> {
         registerDomainEvent(QuestUserCreatedEvent.from(this));
     }
 
+    public void updateProgress(Double progress) {
+        if (progress == null || progress < 0 || progress > 100) {
+            throw new IllegalArgumentException(
+                    "Progress must be between 0 and 100"
+            );
+        }
+
+        this.progress = progress;
+
+        if (progress >= 100.0) {
+            complete();
+        }
+    }
+
+    private void complete() {
+        this.progress = 100.0;
+        this.status = QuestStatus.COMPLETED;
+        this.endDate = LocalDate.now();
+    }
+
     public Long getUserId() {
         return userId;
     }

@@ -54,13 +54,41 @@ public class QuestUserRepositoryImpl implements QuestUserRepository {
     }
 
     @Override
+    public List<QuestUser> findByQuestId(Long questId) {
+        return questUserPersistenceRepository.findByQuestId(questId)
+                .stream()
+                .map(QuestUserPersistenceAssembler::toDomainFromPersistence)
+                .toList();
+    }
+
+    @Override
     public boolean existsByUserIdAndQuestId(Long userId, Long questId) {
         return questUserPersistenceRepository.existsByUserIdAndQuestId(userId, questId);
     }
 
     @Override
+    public boolean existsByUserIdAndQuestIdAndStatusAndIdNot(
+            Long userId,
+            Long questId,
+            QuestStatus status,
+            Long excludedQuestUserId
+    ) {
+        return questUserPersistenceRepository.existsByUserIdAndQuestIdAndStatusAndIdNot(
+                userId,
+                questId,
+                status,
+                excludedQuestUserId
+        );
+    }
+
+    @Override
     public void deleteById(Long id) {
         questUserPersistenceRepository.deleteById(id);
+    }
+
+    @Override
+    public void deleteByQuestId(Long questId) {
+        questUserPersistenceRepository.deleteByQuestId(questId);
     }
 
     @Override

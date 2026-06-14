@@ -16,5 +16,7 @@ public interface ActivityPersistenceRepository extends JpaRepository<ActivityPer
             Integer order
     );
 
+    void deleteByQuestId(Long questId);
+
     Integer countByQuestId(Long questId);
 }
