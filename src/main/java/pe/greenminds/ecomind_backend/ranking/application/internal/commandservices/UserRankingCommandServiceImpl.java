@@ -1,11 +1,11 @@
 package pe.greenminds.ecomind_backend.ranking.application.internal.commandservices;
 
 import org.springframework.stereotype.Service;
-import pe.greenminds.ecomind_backend.ranking.domain.model.aggregates.UserRanking;
 import pe.greenminds.ecomind_backend.ranking.domain.model.commands.CreateUserRankingCommand;
 import pe.greenminds.ecomind_backend.ranking.domain.model.commands.DeleteUserRankingCommand;
 import pe.greenminds.ecomind_backend.ranking.domain.model.commands.UpdateUserRankingCommand;
 import pe.greenminds.ecomind_backend.ranking.domain.services.UserRankingCommandService;
+import pe.greenminds.ecomind_backend.ranking.infrastructure.persistence.jpa.entities.UserRankingEntity;
 import pe.greenminds.ecomind_backend.ranking.infrastructure.persistence.jpa.repositories.UserRankingRepository;
 
 import java.util.Optional;
@@ -21,7 +21,7 @@ public class UserRankingCommandServiceImpl implements UserRankingCommandService 
 
     @Override
     public Long handle(CreateUserRankingCommand command) {
-        var userRanking = new UserRanking(
+        var userRanking = new UserRankingEntity(
                 command.userId(),
                 command.rankingId(),
                 command.rankPosition(),
@@ -31,7 +31,7 @@ public class UserRankingCommandServiceImpl implements UserRankingCommandService 
     }
 
     @Override
-    public Optional<UserRanking> handle(UpdateUserRankingCommand command) {
+    public Optional<UserRankingEntity> handle(UpdateUserRankingCommand command) {
         var result = userRankingRepository.findById(command.userRankingId());
         if (result.isEmpty()) {
             throw new IllegalArgumentException("UserRanking with id " + command.userRankingId()

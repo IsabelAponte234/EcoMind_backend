@@ -1,6 +1,7 @@
 package pe.greenminds.ecomind_backend.ranking.interfaces.rest;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -10,8 +11,10 @@ import pe.greenminds.ecomind_backend.ranking.domain.model.queries.GetUserRanking
 import pe.greenminds.ecomind_backend.ranking.domain.services.UserRankingCommandService;
 import pe.greenminds.ecomind_backend.ranking.domain.services.UserRankingQueryService;
 import pe.greenminds.ecomind_backend.ranking.interfaces.rest.resources.CreateUserRankingResource;
+import pe.greenminds.ecomind_backend.ranking.interfaces.rest.resources.UpdateUserRankingResource;
 import pe.greenminds.ecomind_backend.ranking.interfaces.rest.resources.UserRankingResource;
 import pe.greenminds.ecomind_backend.ranking.interfaces.rest.transform.CreateUserRankingCommandFromResourceAssembler;
+import pe.greenminds.ecomind_backend.ranking.interfaces.rest.transform.UpdateUserRankingCommandFromResourceAssembler;
 import pe.greenminds.ecomind_backend.ranking.interfaces.rest.transform.UserRankingResourceFromEntityAssembler;
 import pe.greenminds.ecomind_backend.shared.interfaces.rest.resources.MessageResource;
 
@@ -35,7 +38,7 @@ public class UserRankingsController {
 
     @PostMapping
     public ResponseEntity<UserRankingResource> createUserRanking(
-            @RequestBody CreateUserRankingResource resource) {
+            @Valid @RequestBody CreateUserRankingResource resource) {
         var createUserRankingCommand =
                 CreateUserRankingCommandFromResourceAssembler.toCommandFromResource(resource);
         var userRankingId = userRankingCommandService.handle(createUserRankingCommand);
@@ -84,15 +87,9 @@ public class UserRankingsController {
     @PutMapping("/{userRankingId}")
     public ResponseEntity<UserRankingResource> updateUserRanking(
             @PathVariable Long userRankingId,
-            @RequestBody UserRankingResource resource) {
+            @Valid @RequestBody UpdateUserRankingResource resource) {
         var updateUserRankingCommand =
-                new pe.greenminds.ecomind_backend.ranking.domain.model.commands.UpdateUserRankingCommand(
-                        userRankingId,
-                        resource.userId(),
-                        resource.rankingId(),
-                        resource.rankPosition(),
-                        resource.score()
-                );
+                UpdateUserRankingCommandFromResourceAssembler.toCommandFromResource(userRankingId, resource);
         var userRanking = userRankingCommandService.handle(updateUserRankingCommand);
         if (userRanking.isPresent()) {
             var userRankingResource =

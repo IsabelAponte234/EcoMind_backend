@@ -1,4 +1,4 @@
-package pe.greenminds.ecomind_backend.shared.domain.model.entities;
+package pe.greenminds.ecomind_backend.shared.infrastructure.persistence.jpa;
 
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -8,19 +8,19 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.util.Date;
 
-@EntityListeners(AuditingEntityListener.class)
+@Getter
 @MappedSuperclass
-public class AuditableModel {
+@EntityListeners(AuditingEntityListener.class)
+public abstract class AuditableAbstractPersistenceEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     @CreatedDate
-    @Getter
-    @Column(nullable = false, updatable = false)
-    @Temporal(TemporalType.TIMESTAMP)
+    @Column(updatable = false)
     private Date createdAt;
 
     @LastModifiedDate
-    @Getter
-    @Column(nullable = false)
-    @Temporal(TemporalType.TIMESTAMP)
     private Date updatedAt;
 }

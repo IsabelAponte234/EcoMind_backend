@@ -1,6 +1,7 @@
 package pe.greenminds.ecomind_backend.ranking.interfaces.rest;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -10,8 +11,11 @@ import pe.greenminds.ecomind_backend.ranking.domain.services.RankingCommandServi
 import pe.greenminds.ecomind_backend.ranking.domain.services.RankingQueryService;
 import pe.greenminds.ecomind_backend.ranking.interfaces.rest.resources.CreateRankingResource;
 import pe.greenminds.ecomind_backend.ranking.interfaces.rest.resources.RankingResource;
+import pe.greenminds.ecomind_backend.ranking.interfaces.rest.resources.UpdateRankingResource;
 import pe.greenminds.ecomind_backend.ranking.interfaces.rest.transform.CreateRankingCommandFromResourceAssembler;
 import pe.greenminds.ecomind_backend.ranking.interfaces.rest.transform.RankingResourceFromEntityAssembler;
+import pe.greenminds.ecomind_backend.ranking.interfaces.rest.transform.UpdateRankingCommandFromResourceAssembler;
+import pe.greenminds.ecomind_backend.shared.interfaces.rest.resources.MessageResource;
 
 import java.util.List;
 
@@ -33,7 +37,7 @@ public class RankingsController {
 
     @PostMapping
     public ResponseEntity<RankingResource> createRanking(
-            @RequestBody CreateRankingResource resource) {
+            @Valid @RequestBody CreateRankingResource resource) {
         var createRankingCommand =
                 CreateRankingCommandFromResourceAssembler.toCommandFromResource(resource);
         var rankingId = rankingCommandService.handle(createRankingCommand);
@@ -68,5 +72,29 @@ public class RankingsController {
             return ResponseEntity.ok(rankingResource);
         }
         return ResponseEntity.notFound().build();
+    }
+
+    @PutMapping("/{rankingId}")
+    public ResponseEntity<RankingResource> updateRanking(
+            @PathVariable Long rankingId,
+            @Valid @RequestBody UpdateRankingResource resource) {
+        var updateRankingCommand =
+                UpdateRankingCommandFromResourceAssembler.toCommandFromResource(rankingId, resource);
+        var ranking = rankingCommandService.handle(updateRankingCommand);
+        if (ranking.isPresent()) {
+            var rankingResource =
+                    RankingResourceFromEntityAssembler.toResourceFromEntity(ranking.get());
+            return ResponseEntity.ok(rankingResource);
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    @DeleteMapping("/{rankingId}")
+    public ResponseEntity<MessageResource> deleteRanking(
+            @PathVariable Long rankingId) {
+        rankingCommandService.handle(
+                new pe.greenminds.ecomind_backend.ranking.domain.model.commands.DeleteRankingCommand(rankingId));
+        return ResponseEntity.ok(new MessageResource(
+                "Ranking with id " + rankingId + " deleted successfully"));
     }
 }

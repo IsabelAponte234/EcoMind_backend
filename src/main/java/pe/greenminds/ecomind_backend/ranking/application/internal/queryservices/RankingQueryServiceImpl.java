@@ -1,10 +1,10 @@
 package pe.greenminds.ecomind_backend.ranking.application.internal.queryservices;
 
 import org.springframework.stereotype.Service;
-import pe.greenminds.ecomind_backend.ranking.domain.model.aggregates.Ranking;
 import pe.greenminds.ecomind_backend.ranking.domain.model.queries.GetAllRankingsQuery;
 import pe.greenminds.ecomind_backend.ranking.domain.model.queries.GetRankingByIdQuery;
 import pe.greenminds.ecomind_backend.ranking.domain.services.RankingQueryService;
+import pe.greenminds.ecomind_backend.ranking.infrastructure.persistence.jpa.entities.RankingEntity;
 import pe.greenminds.ecomind_backend.ranking.infrastructure.persistence.jpa.repositories.RankingRepository;
 
 import java.util.List;
@@ -20,12 +20,12 @@ public class RankingQueryServiceImpl implements RankingQueryService {
     }
 
     @Override
-    public List<Ranking> handle(GetAllRankingsQuery query) {
+    public List<RankingEntity> handle(GetAllRankingsQuery query) {
         return rankingRepository.findAll();
     }
 
     @Override
-    public Optional<Ranking> handle(GetRankingByIdQuery query) {
+    public Optional<RankingEntity> handle(GetRankingByIdQuery query) {
         return rankingRepository.findById(query.rankingId());
     }
 }

@@ -1,12 +1,12 @@
 package pe.greenminds.ecomind_backend.ranking.interfaces.rest.transform;
 
-import pe.greenminds.ecomind_backend.ranking.domain.model.aggregates.Ranking;
+import pe.greenminds.ecomind_backend.ranking.infrastructure.persistence.jpa.entities.RankingEntity;
 import pe.greenminds.ecomind_backend.ranking.interfaces.rest.resources.RankingResource;
 
 import java.text.SimpleDateFormat;
 
 public class RankingResourceFromEntityAssembler {
-    public static RankingResource toResourceFromEntity(Ranking entity) {
+    public static RankingResource toResourceFromEntity(RankingEntity entity) {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
         return new RankingResource(
                 entity.getId(),

@@ -2,12 +2,12 @@ package pe.greenminds.ecomind_backend.ranking.infrastructure.persistence.jpa.rep
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-import pe.greenminds.ecomind_backend.ranking.domain.model.aggregates.UserRanking;
+import pe.greenminds.ecomind_backend.ranking.infrastructure.persistence.jpa.entities.UserRankingEntity;
 
 import java.util.List;
 
 @Repository
-public interface UserRankingRepository extends JpaRepository<UserRanking, Long> {
-    List<UserRanking> findByRankingId(Long rankingId);
-    List<UserRanking> findByUserId(Long userId);
+public interface UserRankingRepository extends JpaRepository<UserRankingEntity, Long> {
+    List<UserRankingEntity> findByRankingId(Long rankingId);
+    List<UserRankingEntity> findByUserId(Long userId);
 }
