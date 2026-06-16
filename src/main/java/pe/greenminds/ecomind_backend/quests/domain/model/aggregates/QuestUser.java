@@ -9,7 +9,7 @@ import pe.greenminds.ecomind_backend.shared.domain.model.aggregates.AbstractDoma
 import java.time.LocalDate;
 import java.util.Objects;
 
-public class QuestUser extends AbstractDomainAggregateRoot<QuestUser> {
+public class QuestUser extends AbstractDomainAggregateRoot {
     @Getter
     @Setter
     private Long id;
@@ -50,7 +50,7 @@ public class QuestUser extends AbstractDomainAggregateRoot<QuestUser> {
     }
 
     public void onCreated(){
-        registerDomainEvent(QuestUserCreatedEvent.from(this));
+        registerEvent(QuestUserCreatedEvent.from(this));
     }
 
     public void updateProgress(Double progress) {

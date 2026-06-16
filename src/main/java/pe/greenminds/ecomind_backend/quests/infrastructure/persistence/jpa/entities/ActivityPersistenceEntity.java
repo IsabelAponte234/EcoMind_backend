@@ -5,7 +5,7 @@ import jakarta.validation.constraints.Positive;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import pe.greenminds.ecomind_backend.quests.domain.model.valueobjects.ActivityType;
-import pe.greenminds.ecomind_backend.shared.infrastructure.persistence.jpa.entities.AuditableAbstractPersistenceEntity;
+import pe.greenminds.ecomind_backend.shared.infrastructure.persistence.jpa.AuditableAbstractPersistenceEntity;
 
 import java.util.Map;
 

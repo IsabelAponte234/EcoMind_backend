@@ -1,7 +1,6 @@
 package pe.greenminds.ecomind_backend.quests.application.queryservices;
 
 import pe.greenminds.ecomind_backend.quests.domain.model.aggregates.Activity;
-import pe.greenminds.ecomind_backend.quests.domain.model.aggregates.Quest;
 import pe.greenminds.ecomind_backend.quests.domain.model.queries.*;
 
 import java.util.List;
