@@ -15,6 +15,7 @@ import pe.greenminds.ecomind_backend.monetization.application.commandservices.Ge
 import pe.greenminds.ecomind_backend.monetization.application.queryservices.GemPurchaseQueryService;
 import pe.greenminds.ecomind_backend.monetization.domain.model.queries.GetAllGemPurchasesQuery;
 import pe.greenminds.ecomind_backend.monetization.domain.model.queries.GetGemPurchaseByIdQuery;
+import pe.greenminds.ecomind_backend.monetization.domain.model.queries.GetGemPurchasesByUserIdQuery;
 import pe.greenminds.ecomind_backend.monetization.interfaces.rest.resources.CreateGemPurchaseResource;
 import pe.greenminds.ecomind_backend.monetization.interfaces.rest.resources.GemPurchaseResource;
 import pe.greenminds.ecomind_backend.monetization.interfaces.rest.transform.CreateGemPurchaseCommandFromResourceAssembler;
@@ -74,6 +75,24 @@ public class GemPurchaseController {
     )
     public ResponseEntity<List<GemPurchaseResource>> getAllGemPurchases() {
         var gemPurchases = gemPurchaseQueryService.handle(new GetAllGemPurchasesQuery());
+
+        var resources = gemPurchases.stream()
+                .map(GemPurchaseResourceFromEntityAssembler::toResourceFromEntity)
+                .toList();
+        return ResponseEntity.ok(resources);
+    }
+
+    @GetMapping("/user/{userId}")
+    @Operation(
+            summary = "Get gem purchases by user ID",
+            description = "Retrieves all gem purchases belonging to a specific user."
+    )
+    @ApiResponse(
+            responseCode = "200",
+            description = "Gem purchases retrieved successfully."
+    )
+    public ResponseEntity<List<GemPurchaseResource>> getGemPurchasesByUserId(@PathVariable Long userId) {
+        var gemPurchases = gemPurchaseQueryService.handle(new GetGemPurchasesByUserIdQuery(userId));
 
         var resources = gemPurchases.stream()
                 .map(GemPurchaseResourceFromEntityAssembler::toResourceFromEntity)

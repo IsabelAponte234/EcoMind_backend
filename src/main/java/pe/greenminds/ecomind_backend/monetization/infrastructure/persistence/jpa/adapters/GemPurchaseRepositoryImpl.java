@@ -32,6 +32,11 @@ public class GemPurchaseRepositoryImpl implements GemPurchaseRepository {
     }
 
     @Override
+    public List<GemPurchase> findByUserId(Long userId) {
+        return gemPurchasePersistenceRepository.findByUserId(userId).stream().map(GemPurchasePersistenceAssembler::toDomainFromPersistence).toList();
+    }
+
+    @Override
     public GemPurchase save(GemPurchase gemPurchase) {
         boolean isNew = gemPurchase.getId() == null;
         var savedEntity = gemPurchasePersistenceRepository.save(GemPurchasePersistenceAssembler.toPersistenceFromDomain(gemPurchase));

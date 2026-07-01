@@ -5,6 +5,7 @@ import pe.greenminds.ecomind_backend.monetization.application.queryservices.GemP
 import pe.greenminds.ecomind_backend.monetization.domain.model.aggregates.GemPurchase;
 import pe.greenminds.ecomind_backend.monetization.domain.model.queries.GetAllGemPurchasesQuery;
 import pe.greenminds.ecomind_backend.monetization.domain.model.queries.GetGemPurchaseByIdQuery;
+import pe.greenminds.ecomind_backend.monetization.domain.model.queries.GetGemPurchasesByUserIdQuery;
 import pe.greenminds.ecomind_backend.monetization.domain.repositories.GemPurchaseRepository;
 
 import java.util.List;
@@ -27,5 +28,10 @@ public class GemPurchaseQueryServiceImpl implements GemPurchaseQueryService {
     @Override
     public List<GemPurchase> handle(GetAllGemPurchasesQuery query) {
         return gemPurchaseRepository.findAll();
+    }
+
+    @Override
+    public List<GemPurchase> handle(GetGemPurchasesByUserIdQuery query) {
+        return gemPurchaseRepository.findByUserId(query.userId());
     }
 }
