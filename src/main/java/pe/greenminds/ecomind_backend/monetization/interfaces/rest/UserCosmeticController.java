@@ -15,6 +15,7 @@ import pe.greenminds.ecomind_backend.monetization.application.commandservices.Us
 import pe.greenminds.ecomind_backend.monetization.application.queryservices.UserCosmeticQueryService;
 import pe.greenminds.ecomind_backend.monetization.domain.model.queries.GetAllUserCosmeticsQuery;
 import pe.greenminds.ecomind_backend.monetization.domain.model.queries.GetUserCosmeticByIdQuery;
+import pe.greenminds.ecomind_backend.monetization.domain.model.queries.GetUserCosmeticsByUserIdQuery;
 import pe.greenminds.ecomind_backend.monetization.interfaces.rest.resources.CreateUserCosmeticResource;
 import pe.greenminds.ecomind_backend.monetization.interfaces.rest.resources.UpdateUserCosmeticResource;
 import pe.greenminds.ecomind_backend.monetization.interfaces.rest.resources.UserCosmeticResource;
@@ -76,6 +77,24 @@ public class UserCosmeticController {
     )
     public ResponseEntity<List<UserCosmeticResource>> getAllUserCosmetics() {
         var userCosmetics = userCosmeticQueryService.handle(new GetAllUserCosmeticsQuery());
+
+        var resources = userCosmetics.stream()
+                .map(UserCosmeticResourceFromEntityAssembler::toResourceFromEntity)
+                .toList();
+        return ResponseEntity.ok(resources);
+    }
+
+    @GetMapping("/user/{userId}")
+    @Operation(
+            summary = "Get user cosmetics by user ID",
+            description = "Retrieves all cosmetics owned by a specific user."
+    )
+    @ApiResponse(
+            responseCode = "200",
+            description = "User cosmetics retrieved successfully."
+    )
+    public ResponseEntity<List<UserCosmeticResource>> getUserCosmeticsByUserId(@PathVariable Long userId) {
+        var userCosmetics = userCosmeticQueryService.handle(new GetUserCosmeticsByUserIdQuery(userId));
 
         var resources = userCosmetics.stream()
                 .map(UserCosmeticResourceFromEntityAssembler::toResourceFromEntity)
