@@ -17,9 +17,11 @@ import pe.greenminds.ecomind_backend.monetization.domain.model.queries.GetAllUse
 import pe.greenminds.ecomind_backend.monetization.domain.model.queries.GetUserCosmeticByIdQuery;
 import pe.greenminds.ecomind_backend.monetization.domain.model.queries.GetUserCosmeticsByUserIdQuery;
 import pe.greenminds.ecomind_backend.monetization.interfaces.rest.resources.CreateUserCosmeticResource;
+import pe.greenminds.ecomind_backend.monetization.interfaces.rest.resources.PurchaseUserCosmeticResource;
 import pe.greenminds.ecomind_backend.monetization.interfaces.rest.resources.UpdateUserCosmeticResource;
 import pe.greenminds.ecomind_backend.monetization.interfaces.rest.resources.UserCosmeticResource;
 import pe.greenminds.ecomind_backend.monetization.interfaces.rest.transform.CreateUserCosmeticCommandFromResourceAssembler;
+import pe.greenminds.ecomind_backend.monetization.interfaces.rest.transform.PurchaseUserCosmeticCommandFromResourceAssembler;
 import pe.greenminds.ecomind_backend.monetization.interfaces.rest.transform.UpdateUserCosmeticCommandFromResourceAssembler;
 import pe.greenminds.ecomind_backend.monetization.interfaces.rest.transform.UserCosmeticResourceFromEntityAssembler;
 import pe.greenminds.ecomind_backend.shared.application.result.ApplicationError;
@@ -57,6 +59,32 @@ public class UserCosmeticController {
     })
     public ResponseEntity<?> createUserCosmetic(@Valid @RequestBody CreateUserCosmeticResource resource) {
         var command = CreateUserCosmeticCommandFromResourceAssembler.toCommandFromResource(resource);
+        var result = userCosmeticCommandService.handle(command);
+
+        return ResponseEntityAssembler.toResponseEntityFromResult(
+                result,
+                UserCosmeticResourceFromEntityAssembler::toResourceFromEntity,
+                HttpStatus.CREATED
+        );
+    }
+
+    @PostMapping("/purchase")
+    @Operation(
+            summary = "Buy a cosmetic with gems",
+            description = "Buys a cosmetic for a user in a single atomic transaction: validates the cosmetic exists and is not already owned, charges the user's gem balance server-side, creates the ownership record and records the SPEND gem movement."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "201",
+                    description = "Cosmetic purchased successfully",
+                    content = @Content(schema = @Schema(implementation = UserCosmeticResource.class))
+            ),
+            @ApiResponse(responseCode = "404", description = "Cosmetic or user not found"),
+            @ApiResponse(responseCode = "409", description = "Cosmetic already owned by this user"),
+            @ApiResponse(responseCode = "422", description = "Insufficient gem balance")
+    })
+    public ResponseEntity<?> purchaseUserCosmetic(@Valid @RequestBody PurchaseUserCosmeticResource resource) {
+        var command = PurchaseUserCosmeticCommandFromResourceAssembler.toCommandFromResource(resource);
         var result = userCosmeticCommandService.handle(command);
 
         return ResponseEntityAssembler.toResponseEntityFromResult(

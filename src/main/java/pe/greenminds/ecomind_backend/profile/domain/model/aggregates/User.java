@@ -69,4 +69,14 @@ public class User extends AbstractDomainAggregateRoot<User> {
         }
         this.gemBalance += amount;
     }
+
+    public void spendGems(Integer amount) {
+        if (amount == null || amount <= 0) {
+            throw new IllegalArgumentException("amount must be greater than zero");
+        }
+        if (this.gemBalance < amount) {
+            throw new IllegalStateException("Insufficient gem balance");
+        }
+        this.gemBalance -= amount;
+    }
 }
