@@ -7,8 +7,13 @@ import pe.greenminds.ecomind_backend.monetization.domain.model.aggregates.GemPur
 import pe.greenminds.ecomind_backend.monetization.domain.model.commands.ApproveGemPurchaseCommand;
 import pe.greenminds.ecomind_backend.monetization.domain.model.commands.CreateGemPurchaseCheckoutCommand;
 import pe.greenminds.ecomind_backend.monetization.domain.model.commands.CreateGemPurchaseCommand;
+import pe.greenminds.ecomind_backend.monetization.application.outboundservices.external.ProfileMonetizationExternalService;
+import pe.greenminds.ecomind_backend.monetization.domain.model.aggregates.GemMovement;
 import pe.greenminds.ecomind_backend.monetization.domain.model.commands.RejectGemPurchaseCommand;
+import pe.greenminds.ecomind_backend.monetization.domain.model.valueobjects.MovementOrigin;
+import pe.greenminds.ecomind_backend.monetization.domain.model.valueobjects.MovementType;
 import pe.greenminds.ecomind_backend.monetization.domain.model.valueobjects.PaymentStatus;
+import pe.greenminds.ecomind_backend.monetization.domain.repositories.GemMovementRepository;
 import pe.greenminds.ecomind_backend.monetization.domain.repositories.GemPackageRepository;
 import pe.greenminds.ecomind_backend.monetization.domain.repositories.GemPurchaseRepository;
 import pe.greenminds.ecomind_backend.shared.application.result.ApplicationError;
@@ -22,10 +27,19 @@ public class GemPurchaseCommandServiceImpl implements GemPurchaseCommandService 
 
     private final GemPurchaseRepository gemPurchaseRepository;
     private final GemPackageRepository gemPackageRepository;
+    private final GemMovementRepository gemMovementRepository;
+    private final ProfileMonetizationExternalService profileMonetizationExternalService;
 
-    public GemPurchaseCommandServiceImpl(GemPurchaseRepository gemPurchaseRepository, GemPackageRepository gemPackageRepository) {
+    public GemPurchaseCommandServiceImpl(
+            GemPurchaseRepository gemPurchaseRepository,
+            GemPackageRepository gemPackageRepository,
+            GemMovementRepository gemMovementRepository,
+            ProfileMonetizationExternalService profileMonetizationExternalService
+    ) {
         this.gemPurchaseRepository = gemPurchaseRepository;
         this.gemPackageRepository = gemPackageRepository;
+        this.gemMovementRepository = gemMovementRepository;
+        this.profileMonetizationExternalService = profileMonetizationExternalService;
     }
 
     @Transactional
@@ -97,14 +111,40 @@ public class GemPurchaseCommandServiceImpl implements GemPurchaseCommandService 
             );
         }
 
+        var gemPackage = gemPackageRepository.findById(gemPurchase.get().getPackageId());
+        if (gemPackage.isEmpty()) {
+            return Result.failure(
+                    ApplicationError.notFound("GemPackage", gemPurchase.get().getPackageId().toString())
+            );
+        }
+
         try {
             gemPurchase.get().approve();
-            return Result.success(gemPurchaseRepository.save(gemPurchase.get()));
         } catch (IllegalStateException e) {
             return Result.failure(
                     ApplicationError.businessRuleViolation("GemPurchase approval", e.getMessage())
             );
         }
+
+        var creditResult = profileMonetizationExternalService.creditGems(
+                gemPurchase.get().getUserId(),
+                gemPackage.get().getGemAmount()
+        );
+        if (creditResult instanceof Result.Failure<Void, ApplicationError> failure) {
+            return Result.failure(failure.error());
+        }
+
+        var savedGemPurchase = gemPurchaseRepository.save(gemPurchase.get());
+
+        gemMovementRepository.save(new GemMovement(
+                savedGemPurchase.getUserId(),
+                MovementType.PURCHASE,
+                gemPackage.get().getGemAmount(),
+                MovementOrigin.GEM_PACKAGE,
+                savedGemPurchase.getPackageId()
+        ));
+
+        return Result.success(savedGemPurchase);
     }
 
     @Transactional

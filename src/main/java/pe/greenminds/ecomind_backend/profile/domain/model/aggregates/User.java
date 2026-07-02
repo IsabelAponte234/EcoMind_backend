@@ -62,4 +62,11 @@ public class User extends AbstractDomainAggregateRoot<User> {
         if (streak != null) this.streak = streak;
         if (lastStreakDate != null) this.lastStreakDate = lastStreakDate;
     }
+
+    public void creditGems(Integer amount) {
+        if (amount == null || amount <= 0) {
+            throw new IllegalArgumentException("amount must be greater than zero");
+        }
+        this.gemBalance += amount;
+    }
 }

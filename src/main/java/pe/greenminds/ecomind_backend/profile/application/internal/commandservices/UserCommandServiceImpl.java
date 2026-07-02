@@ -61,6 +61,18 @@ public class UserCommandServiceImpl implements UserCommandService {
     }
 
     @Transactional
+    public Result<User, ApplicationError> handle(CreditUserGemsCommand command) {
+        var user = userRepository.findById(command.userId());
+        if (user.isEmpty()) return Result.failure(ApplicationError.notFound("User", command.userId().toString()));
+        try {
+            user.get().creditGems(command.amount());
+            return Result.success(userRepository.save(user.get()));
+        } catch (IllegalArgumentException ex) {
+            return Result.failure(ApplicationError.validationError("User", ex.getMessage()));
+        }
+    }
+
+    @Transactional
     public Result<User, ApplicationError> handle(DeleteUserCommand command) {
         var user = userRepository.findById(command.userId());
         if (user.isEmpty()) return Result.failure(ApplicationError.notFound("User", command.userId().toString()));
