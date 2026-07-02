@@ -10,6 +10,8 @@ import pe.greenminds.ecomind_backend.quests.domain.model.commands.UpdateQuestCom
 import pe.greenminds.ecomind_backend.quests.domain.model.valueobjects.Reward;
 import pe.greenminds.ecomind_backend.quests.domain.repositories.ActivityRepository;
 import pe.greenminds.ecomind_backend.quests.domain.repositories.ActivityUserRepository;
+import pe.greenminds.ecomind_backend.quests.domain.repositories.CollabQuestMemberRepository;
+import pe.greenminds.ecomind_backend.quests.domain.repositories.CollabQuestSessionRepository;
 import pe.greenminds.ecomind_backend.quests.domain.repositories.QuestRepository;
 import pe.greenminds.ecomind_backend.quests.domain.repositories.QuestUserRepository;
 import pe.greenminds.ecomind_backend.shared.application.result.ApplicationError;
@@ -22,17 +24,23 @@ public class QuestCommandServiceImpl implements QuestCommandService {
     private final QuestUserRepository questUserRepository;
     private final ActivityRepository activityRepository;
     private final ActivityUserRepository activityUserRepository;
+    private final CollabQuestSessionRepository collabQuestSessionRepository;
+    private final CollabQuestMemberRepository collabQuestMemberRepository;
 
     public QuestCommandServiceImpl(
             QuestRepository questRepository,
             QuestUserRepository questUserRepository,
             ActivityRepository activityRepository,
-            ActivityUserRepository activityUserRepository
+            ActivityUserRepository activityUserRepository,
+            CollabQuestSessionRepository collabQuestSessionRepository,
+            CollabQuestMemberRepository collabQuestMemberRepository
     ) {
         this.questRepository = questRepository;
         this.questUserRepository = questUserRepository;
         this.activityRepository = activityRepository;
         this.activityUserRepository = activityUserRepository;
+        this.collabQuestSessionRepository = collabQuestSessionRepository;
+        this.collabQuestMemberRepository = collabQuestMemberRepository;
     }
 
     @Override
@@ -85,6 +93,12 @@ public class QuestCommandServiceImpl implements QuestCommandService {
         questUsers.forEach(
                 questUser -> activityUserRepository.deleteByQuestUserId(questUser.getId())
         );
+
+        var collabQuestSessions = collabQuestSessionRepository.findByQuestId(command.questId());
+        collabQuestSessions.forEach(
+                session -> collabQuestMemberRepository.deleteBySessionId(session.getId())
+        );
+        collabQuestSessionRepository.deleteByQuestId(command.questId());
 
         questUserRepository.deleteByQuestId(command.questId());
         activityRepository.deleteByQuestId(command.questId());

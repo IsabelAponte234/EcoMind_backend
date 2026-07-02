@@ -5,11 +5,16 @@ import org.springframework.transaction.annotation.Transactional;
 import pe.greenminds.ecomind_backend.quests.application.commandservices.ActivityUserCommandService;
 import pe.greenminds.ecomind_backend.quests.application.internal.submission.ActivitySubmissionHandlerRegistry;
 import pe.greenminds.ecomind_backend.quests.domain.model.aggregates.ActivityUser;
+import pe.greenminds.ecomind_backend.quests.domain.model.aggregates.QuestUser;
 import pe.greenminds.ecomind_backend.quests.domain.model.commands.CreateActivityUserCommand;
 import pe.greenminds.ecomind_backend.quests.domain.model.commands.SubmitActivityUserCommand;
+import pe.greenminds.ecomind_backend.quests.domain.model.valueobjects.CollabMemberStatus;
+import pe.greenminds.ecomind_backend.quests.domain.model.valueobjects.CollabQuestStatus;
 import pe.greenminds.ecomind_backend.quests.domain.model.valueobjects.QuestStatus;
 import pe.greenminds.ecomind_backend.quests.domain.repositories.ActivityRepository;
 import pe.greenminds.ecomind_backend.quests.domain.repositories.ActivityUserRepository;
+import pe.greenminds.ecomind_backend.quests.domain.repositories.CollabQuestMemberRepository;
+import pe.greenminds.ecomind_backend.quests.domain.repositories.CollabQuestSessionRepository;
 import pe.greenminds.ecomind_backend.quests.domain.repositories.QuestUserRepository;
 import pe.greenminds.ecomind_backend.shared.application.result.ApplicationError;
 import pe.greenminds.ecomind_backend.shared.application.result.Result;
@@ -19,17 +24,23 @@ public class ActivityUserCommandServiceImpl implements ActivityUserCommandServic
     private final ActivityUserRepository activityUserRepository;
     private final ActivityRepository activityRepository;
     private final QuestUserRepository questUserRepository;
+    private final CollabQuestSessionRepository collabQuestSessionRepository;
+    private final CollabQuestMemberRepository collabQuestMemberRepository;
     private final ActivitySubmissionHandlerRegistry submissionHandlerRegistry;
 
     public ActivityUserCommandServiceImpl(
             ActivityUserRepository activityUserRepository,
             ActivityRepository activityRepository,
             QuestUserRepository questUserRepository,
+            CollabQuestSessionRepository collabQuestSessionRepository,
+            CollabQuestMemberRepository collabQuestMemberRepository,
             ActivitySubmissionHandlerRegistry submissionHandlerRegistry
     ) {
         this.activityUserRepository = activityUserRepository;
         this.activityRepository = activityRepository;
         this.questUserRepository = questUserRepository;
+        this.collabQuestSessionRepository = collabQuestSessionRepository;
+        this.collabQuestMemberRepository = collabQuestMemberRepository;
         this.submissionHandlerRegistry = submissionHandlerRegistry;
     }
 
@@ -145,10 +156,19 @@ public class ActivityUserCommandServiceImpl implements ActivityUserCommandServic
         }
 
         try {
-            submissionHandler.get().submit(
-                    activityUser.get(),
-                    command.data()
-            );
+            if (activityUser.get().getCollaborativeSessionId() == null) {
+                submissionHandler.get().submit(
+                        activityUser.get(),
+                        command.data()
+                );
+            } else {
+                return submitCollaborativeActivity(
+                        activityUser.get(),
+                        questUser.get(),
+                        command,
+                        submissionHandler.get()
+                );
+            }
         } catch (IllegalArgumentException exception) {
             return Result.failure(
                     ApplicationError.validationError(
@@ -171,5 +191,157 @@ public class ActivityUserCommandServiceImpl implements ActivityUserCommandServic
         questUserRepository.save(questUser.get());
 
         return Result.success(savedActivityUser);
+    }
+
+    private Result<ActivityUser, ApplicationError> submitCollaborativeActivity(
+            ActivityUser submittedActivityUser,
+            QuestUser submittedQuestUser,
+            SubmitActivityUserCommand command,
+            pe.greenminds.ecomind_backend.quests.application.internal.submission.ActivitySubmissionHandler submissionHandler
+    ) {
+        var session = collabQuestSessionRepository.findById(
+                submittedActivityUser.getCollaborativeSessionId()
+        );
+        if (session.isEmpty()) {
+            return Result.failure(
+                    ApplicationError.notFound(
+                            "CollabQuestSession",
+                            submittedActivityUser.getCollaborativeSessionId().toString()
+                    )
+            );
+        }
+
+        if (session.get().getStatus() != CollabQuestStatus.STARTED) {
+            return Result.failure(
+                    ApplicationError.businessRuleViolation(
+                            "Collaborative quest session must be started",
+                            "Session %d is %s".formatted(
+                                    session.get().getId(),
+                                    session.get().getStatus()
+                            )
+                    )
+            );
+        }
+
+        var acceptedMembers = collabQuestMemberRepository.findBySessionIdAndStatusIn(
+                session.get().getId(),
+                java.util.List.of(CollabMemberStatus.ACCEPTED)
+        );
+        var submittedUserIsAccepted = acceptedMembers.stream()
+                .anyMatch(member -> member.getUserId().equals(submittedQuestUser.getUserId()));
+
+        if (!submittedUserIsAccepted) {
+            return Result.failure(
+                    ApplicationError.businessRuleViolation(
+                            "Only accepted members can submit collaborative progress",
+                            "User %d is not accepted in session %d".formatted(
+                                    submittedQuestUser.getUserId(),
+                                    session.get().getId()
+                            )
+                    )
+            );
+        }
+
+        var synchronizedActivityUsers = new java.util.ArrayList<ActivityUser>();
+        var synchronizedQuestUsers = new java.util.ArrayList<QuestUser>();
+
+        for (var member : acceptedMembers) {
+            var questUser = questUserRepository.findByUserIdAndQuestId(
+                    member.getUserId(),
+                    session.get().getQuestId()
+            );
+
+            if (questUser.isEmpty()
+                    || !session.get().getId().equals(
+                            questUser.get().getCollaborativeSessionId()
+                    )) {
+                return Result.failure(
+                        ApplicationError.notFound(
+                                "QuestUser",
+                                "userId=%d, questId=%d, collaborativeSessionId=%d".formatted(
+                                        member.getUserId(),
+                                        session.get().getQuestId(),
+                                        session.get().getId()
+                                )
+                        )
+                );
+            }
+
+            if (questUser.get().getStatus() == QuestStatus.COMPLETED) {
+                return Result.failure(
+                        ApplicationError.businessRuleViolation(
+                                "Completed quest attempts cannot be modified",
+                                "QuestUser %d is already completed".formatted(
+                                        questUser.get().getId()
+                                )
+                        )
+                );
+            }
+
+            var activityUser = activityUserRepository.findByQuestUserIdAndActivityId(
+                    questUser.get().getId(),
+                    submittedActivityUser.getActivityId()
+            );
+
+            if (activityUser.isEmpty()
+                    || !session.get().getId().equals(
+                            activityUser.get().getCollaborativeSessionId()
+                    )) {
+                return Result.failure(
+                        ApplicationError.notFound(
+                                "ActivityUser",
+                                "questUserId=%d, activityId=%d, collaborativeSessionId=%d"
+                                        .formatted(
+                                                questUser.get().getId(),
+                                                submittedActivityUser.getActivityId(),
+                                                session.get().getId()
+                                        )
+                        )
+                );
+            }
+
+            synchronizedQuestUsers.add(questUser.get());
+            synchronizedActivityUsers.add(activityUser.get());
+        }
+
+        try {
+            for (var activityUser : synchronizedActivityUsers) {
+                submissionHandler.submit(activityUser, command.data());
+            }
+        } catch (IllegalArgumentException exception) {
+            return Result.failure(
+                    ApplicationError.validationError(
+                            "Activity submission",
+                            exception.getMessage()
+                    )
+            );
+        }
+
+        ActivityUser savedSubmittedActivityUser = null;
+        for (var activityUser : synchronizedActivityUsers) {
+            var savedActivityUser = activityUserRepository.save(activityUser);
+            if (activityUser.getId().equals(submittedActivityUser.getId())) {
+                savedSubmittedActivityUser = savedActivityUser;
+            }
+        }
+
+        for (var questUser : synchronizedQuestUsers) {
+            updateQuestUserProgress(questUser);
+        }
+
+        return Result.success(savedSubmittedActivityUser);
+    }
+
+    private void updateQuestUserProgress(QuestUser questUser) {
+        var activityUsers = activityUserRepository.findByQuestUserId(
+                questUser.getId()
+        );
+        var questProgress = activityUsers.stream()
+                .mapToDouble(ActivityUser::getProgress)
+                .average()
+                .orElse(0.0);
+
+        questUser.updateProgress(questProgress);
+        questUserRepository.save(questUser);
     }
 }
