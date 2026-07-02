@@ -13,6 +13,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pe.greenminds.ecomind_backend.monetization.application.commandservices.GemPurchaseCommandService;
 import pe.greenminds.ecomind_backend.monetization.application.queryservices.GemPurchaseQueryService;
+import pe.greenminds.ecomind_backend.monetization.domain.model.commands.ApproveGemPurchaseCommand;
+import pe.greenminds.ecomind_backend.monetization.domain.model.commands.RejectGemPurchaseCommand;
 import pe.greenminds.ecomind_backend.monetization.domain.model.queries.GetAllGemPurchasesQuery;
 import pe.greenminds.ecomind_backend.monetization.domain.model.queries.GetGemPurchaseByIdQuery;
 import pe.greenminds.ecomind_backend.monetization.domain.model.queries.GetGemPurchasesByUserIdQuery;
@@ -87,6 +89,54 @@ public class GemPurchaseController {
                 result,
                 GemPurchaseResourceFromEntityAssembler::toResourceFromEntity,
                 HttpStatus.CREATED
+        );
+    }
+
+    @PatchMapping("/{gemPurchaseId}/approve")
+    @Operation(
+            summary = "Approve a gem purchase",
+            description = "Marks a PENDING gem purchase as APPROVED. Intended to be called once a payment gateway confirms the charge (e.g. from a webhook)."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Gem purchase approved",
+                    content = @Content(schema = @Schema(implementation = GemPurchaseResource.class))
+            ),
+            @ApiResponse(responseCode = "404", description = "Gem purchase not found"),
+            @ApiResponse(responseCode = "422", description = "Gem purchase is not PENDING")
+    })
+    public ResponseEntity<?> approveGemPurchase(@PathVariable Long gemPurchaseId) {
+        var result = gemPurchaseCommandService.handle(new ApproveGemPurchaseCommand(gemPurchaseId));
+
+        return ResponseEntityAssembler.toResponseEntityFromResult(
+                result,
+                GemPurchaseResourceFromEntityAssembler::toResourceFromEntity,
+                HttpStatus.OK
+        );
+    }
+
+    @PatchMapping("/{gemPurchaseId}/reject")
+    @Operation(
+            summary = "Reject a gem purchase",
+            description = "Marks a PENDING gem purchase as REJECTED. Intended to be called when a payment gateway reports a failed or cancelled charge."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Gem purchase rejected",
+                    content = @Content(schema = @Schema(implementation = GemPurchaseResource.class))
+            ),
+            @ApiResponse(responseCode = "404", description = "Gem purchase not found"),
+            @ApiResponse(responseCode = "422", description = "Gem purchase is not PENDING")
+    })
+    public ResponseEntity<?> rejectGemPurchase(@PathVariable Long gemPurchaseId) {
+        var result = gemPurchaseCommandService.handle(new RejectGemPurchaseCommand(gemPurchaseId));
+
+        return ResponseEntityAssembler.toResponseEntityFromResult(
+                result,
+                GemPurchaseResourceFromEntityAssembler::toResourceFromEntity,
+                HttpStatus.OK
         );
     }
 

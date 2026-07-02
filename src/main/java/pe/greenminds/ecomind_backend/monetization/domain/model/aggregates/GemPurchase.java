@@ -47,4 +47,18 @@ public class GemPurchase extends AbstractDomainAggregateRoot<GemPurchase> {
     public void onCreated() {
         registerDomainEvent(GemPurchaseCreatedEvent.from(this));
     }
+
+    public void approve() {
+        if (this.paymentStatus != PaymentStatus.PENDING) {
+            throw new IllegalStateException("Gem purchase must be PENDING to be approved");
+        }
+        this.paymentStatus = PaymentStatus.APPROVED;
+    }
+
+    public void reject() {
+        if (this.paymentStatus != PaymentStatus.PENDING) {
+            throw new IllegalStateException("Gem purchase must be PENDING to be rejected");
+        }
+        this.paymentStatus = PaymentStatus.REJECTED;
+    }
 }

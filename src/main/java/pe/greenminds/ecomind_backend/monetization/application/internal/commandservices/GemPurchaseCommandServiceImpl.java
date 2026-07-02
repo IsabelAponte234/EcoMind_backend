@@ -4,8 +4,10 @@ import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 import pe.greenminds.ecomind_backend.monetization.application.commandservices.GemPurchaseCommandService;
 import pe.greenminds.ecomind_backend.monetization.domain.model.aggregates.GemPurchase;
+import pe.greenminds.ecomind_backend.monetization.domain.model.commands.ApproveGemPurchaseCommand;
 import pe.greenminds.ecomind_backend.monetization.domain.model.commands.CreateGemPurchaseCheckoutCommand;
 import pe.greenminds.ecomind_backend.monetization.domain.model.commands.CreateGemPurchaseCommand;
+import pe.greenminds.ecomind_backend.monetization.domain.model.commands.RejectGemPurchaseCommand;
 import pe.greenminds.ecomind_backend.monetization.domain.model.valueobjects.PaymentStatus;
 import pe.greenminds.ecomind_backend.monetization.domain.repositories.GemPackageRepository;
 import pe.greenminds.ecomind_backend.monetization.domain.repositories.GemPurchaseRepository;
@@ -81,6 +83,46 @@ public class GemPurchaseCommandServiceImpl implements GemPurchaseCommandService 
         } catch (Exception e) {
             return Result.failure(
                     ApplicationError.unexpected("GemPurchase checkout", e.getMessage())
+            );
+        }
+    }
+
+    @Transactional
+    @Override
+    public Result<GemPurchase, ApplicationError> handle(ApproveGemPurchaseCommand command) {
+        var gemPurchase = gemPurchaseRepository.findById(command.gemPurchaseId());
+        if (gemPurchase.isEmpty()) {
+            return Result.failure(
+                    ApplicationError.notFound("GemPurchase", command.gemPurchaseId().toString())
+            );
+        }
+
+        try {
+            gemPurchase.get().approve();
+            return Result.success(gemPurchaseRepository.save(gemPurchase.get()));
+        } catch (IllegalStateException e) {
+            return Result.failure(
+                    ApplicationError.businessRuleViolation("GemPurchase approval", e.getMessage())
+            );
+        }
+    }
+
+    @Transactional
+    @Override
+    public Result<GemPurchase, ApplicationError> handle(RejectGemPurchaseCommand command) {
+        var gemPurchase = gemPurchaseRepository.findById(command.gemPurchaseId());
+        if (gemPurchase.isEmpty()) {
+            return Result.failure(
+                    ApplicationError.notFound("GemPurchase", command.gemPurchaseId().toString())
+            );
+        }
+
+        try {
+            gemPurchase.get().reject();
+            return Result.success(gemPurchaseRepository.save(gemPurchase.get()));
+        } catch (IllegalStateException e) {
+            return Result.failure(
+                    ApplicationError.businessRuleViolation("GemPurchase rejection", e.getMessage())
             );
         }
     }
