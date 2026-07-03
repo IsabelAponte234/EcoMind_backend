@@ -6,11 +6,6 @@ import pe.greenminds.ecomind_backend.monetization.domain.model.valueobjects.Paym
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Picks the right {@link PaymentGateway} for a given payment method.
- * Card/Yape are handled by Culqi, PayPal by the PayPal gateway; adding a new
- * provider is just adding another {@link PaymentGateway} bean.
- */
 @Service
 public class PaymentGatewayResolver {
 

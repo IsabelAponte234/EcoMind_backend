@@ -13,14 +13,6 @@ import pe.greenminds.ecomind_backend.monetization.domain.model.valueobjects.Paym
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/**
- * Culqi implementation of the {@link PaymentGateway} port.
- *
- * <p>Calls Culqi's {@code POST /charges} endpoint using the merchant secret key.
- * The client never sends raw card data here: the frontend tokenizes the card/Yape
- * with Culqi.js (public key) and only the resulting one-time token reaches this
- * server as {@link ChargeRequest#sourceToken()}.</p>
- */
 @Service
 public class CulqiPaymentGateway implements PaymentGateway {
 
@@ -62,7 +54,6 @@ public class CulqiPaymentGateway implements PaymentGateway {
             var chargeId = response != null ? String.valueOf(response.get("id")) : null;
             return ChargeResult.approved(chargeId);
         } catch (RestClientResponseException e) {
-            // Culqi returns 4xx with a JSON body describing why the charge was declined.
             return ChargeResult.declined("Culqi declined the charge: " + e.getResponseBodyAsString());
         } catch (Exception e) {
             return ChargeResult.declined("Could not reach Culqi: " + e.getMessage());

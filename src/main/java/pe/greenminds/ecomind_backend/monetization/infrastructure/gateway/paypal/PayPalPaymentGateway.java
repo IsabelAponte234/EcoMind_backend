@@ -14,14 +14,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Map;
 
-/**
- * PayPal implementation of the {@link PaymentGateway} port.
- *
- * <p>PayPal is a two-step provider: the frontend (PayPal Buttons) creates and lets the
- * buyer approve an order, then hands the approved order id to this server. Here we only
- * do the final step — <b>capture</b> the approved order — which is what actually moves
- * the money. So {@link ChargeRequest#sourceToken()} carries the approved PayPal order id.</p>
- */
 @Service
 public class PayPalPaymentGateway implements PaymentGateway {
 
