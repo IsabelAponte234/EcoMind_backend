@@ -1,5 +1,6 @@
 package pe.greenminds.ecomind_backend.monetization.domain.model.commands;
 
+import pe.greenminds.ecomind_backend.monetization.domain.model.valueobjects.PaymentMethod;
 import pe.greenminds.ecomind_backend.monetization.domain.model.valueobjects.PaymentStatus;
 
 import java.math.BigDecimal;
@@ -11,6 +12,7 @@ public record CreateGemPurchaseCommand(
         LocalDateTime purchaseDate,
         BigDecimal amountPaid,
         PaymentStatus paymentStatus,
-        String paymentReference
+        String paymentReference,
+        PaymentMethod paymentMethod
 ) {
 }

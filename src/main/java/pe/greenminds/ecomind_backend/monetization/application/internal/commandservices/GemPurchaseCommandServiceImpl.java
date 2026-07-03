@@ -66,7 +66,8 @@ public class GemPurchaseCommandServiceImpl implements GemPurchaseCommandService 
                     command.purchaseDate(),
                     command.amountPaid(),
                     command.paymentStatus(),
-                    command.paymentReference()
+                    command.paymentReference(),
+                    command.paymentMethod()
             );
 
             return Result.success(gemPurchaseRepository.save(gemPurchase));
@@ -98,7 +99,8 @@ public class GemPurchaseCommandServiceImpl implements GemPurchaseCommandService 
                     LocalDateTime.now(),
                     gemPackage.get().getRealPrice(),
                     PaymentStatus.PENDING,
-                    "PENDING-" + UUID.randomUUID()
+                    "PENDING-" + UUID.randomUUID(),
+                    command.paymentMethod()
             );
 
             return Result.success(gemPurchaseRepository.save(gemPurchase));
@@ -172,7 +174,9 @@ public class GemPurchaseCommandServiceImpl implements GemPurchaseCommandService 
             );
         }
 
-        // Payment approved: credit the gems and record the movement atomically.
+        // Payment approved: store the gateway charge reference, then credit the gems
+        // and record the movement atomically.
+        gemPurchase.get().assignPaymentReference(chargeResult.chargeId());
         return approveAndCredit(gemPurchase.get(), gemPackage.get());
     }
 

@@ -15,7 +15,8 @@ public class GemPurchaseResourceFromEntityAssembler {
                 gemPurchase.getPurchaseDate(),
                 gemPurchase.getAmountPaid(),
                 gemPurchase.getPaymentStatus().name().toLowerCase(),
-                gemPurchase.getPaymentReference()
+                gemPurchase.getPaymentReference(),
+                gemPurchase.getPaymentMethod().name().toLowerCase()
         );
     }
 }

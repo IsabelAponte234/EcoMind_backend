@@ -3,6 +3,7 @@ package pe.greenminds.ecomind_backend.monetization.interfaces.rest.resources;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.PositiveOrZero;
 
 import java.math.BigDecimal;
@@ -45,6 +46,10 @@ public record CreateGemPurchaseResource(
     String paymentStatus,
 
     @Schema(description = "Payment reference", example = "PAY-123456")
-    String paymentReference
+    String paymentReference,
+
+    @Pattern(regexp = "(?i)(card|yape|paypal)?", message = "must be CARD, YAPE or PAYPAL")
+    @Schema(description = "Payment method used. Defaults to CARD when omitted.", example = "card")
+    String paymentMethod
 ) {
 }
