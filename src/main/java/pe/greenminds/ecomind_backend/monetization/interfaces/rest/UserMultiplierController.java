@@ -17,8 +17,10 @@ import pe.greenminds.ecomind_backend.monetization.domain.model.queries.GetAllUse
 import pe.greenminds.ecomind_backend.monetization.domain.model.queries.GetUserMultiplierByIdQuery;
 import pe.greenminds.ecomind_backend.monetization.domain.model.queries.GetUserMultipliersByUserIdQuery;
 import pe.greenminds.ecomind_backend.monetization.interfaces.rest.resources.CreateUserMultiplierResource;
+import pe.greenminds.ecomind_backend.monetization.interfaces.rest.resources.PurchaseUserMultiplierResource;
 import pe.greenminds.ecomind_backend.monetization.interfaces.rest.resources.UserMultiplierResource;
 import pe.greenminds.ecomind_backend.monetization.interfaces.rest.transform.CreateUserMultiplierCommandFromResourceAssembler;
+import pe.greenminds.ecomind_backend.monetization.interfaces.rest.transform.PurchaseUserMultiplierCommandFromResourceAssembler;
 import pe.greenminds.ecomind_backend.monetization.interfaces.rest.transform.UserMultiplierResourceFromEntityAssembler;
 import pe.greenminds.ecomind_backend.shared.application.result.ApplicationError;
 import pe.greenminds.ecomind_backend.shared.interfaces.rest.transform.ErrorResponseAssembler;
@@ -55,6 +57,31 @@ public class UserMultiplierController {
     })
     public ResponseEntity<?> createUserMultiplier(@Valid @RequestBody CreateUserMultiplierResource resource) {
         var command = CreateUserMultiplierCommandFromResourceAssembler.toCommandFromResource(resource);
+        var result = userMultiplierCommandService.handle(command);
+
+        return ResponseEntityAssembler.toResponseEntityFromResult(
+                result,
+                UserMultiplierResourceFromEntityAssembler::toResourceFromEntity,
+                HttpStatus.CREATED
+        );
+    }
+
+    @PostMapping("/purchase")
+    @Operation(
+            summary = "Buy a multiplier with gems",
+            description = "Buys a multiplier for a user in a single atomic transaction: validates the multiplier exists, charges the user's gem balance server-side, activates it (start now, end after its duration) and records the SPEND gem movement."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "201",
+                    description = "Multiplier purchased successfully",
+                    content = @Content(schema = @Schema(implementation = UserMultiplierResource.class))
+            ),
+            @ApiResponse(responseCode = "404", description = "Multiplier or user not found"),
+            @ApiResponse(responseCode = "422", description = "Insufficient gem balance")
+    })
+    public ResponseEntity<?> purchaseUserMultiplier(@Valid @RequestBody PurchaseUserMultiplierResource resource) {
+        var command = PurchaseUserMultiplierCommandFromResourceAssembler.toCommandFromResource(resource);
         var result = userMultiplierCommandService.handle(command);
 
         return ResponseEntityAssembler.toResponseEntityFromResult(

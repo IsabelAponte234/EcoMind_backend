@@ -8,7 +8,11 @@ import pe.greenminds.ecomind_backend.monetization.domain.model.commands.ApproveG
 import pe.greenminds.ecomind_backend.monetization.domain.model.commands.CreateGemPurchaseCheckoutCommand;
 import pe.greenminds.ecomind_backend.monetization.domain.model.commands.CreateGemPurchaseCommand;
 import pe.greenminds.ecomind_backend.monetization.application.outboundservices.external.ProfileMonetizationExternalService;
+import pe.greenminds.ecomind_backend.monetization.application.outboundservices.gateway.ChargeRequest;
+import pe.greenminds.ecomind_backend.monetization.application.outboundservices.gateway.PaymentGateway;
 import pe.greenminds.ecomind_backend.monetization.domain.model.aggregates.GemMovement;
+import pe.greenminds.ecomind_backend.monetization.domain.model.aggregates.GemPackage;
+import pe.greenminds.ecomind_backend.monetization.domain.model.commands.PayGemPurchaseCommand;
 import pe.greenminds.ecomind_backend.monetization.domain.model.commands.RejectGemPurchaseCommand;
 import pe.greenminds.ecomind_backend.monetization.domain.model.valueobjects.MovementOrigin;
 import pe.greenminds.ecomind_backend.monetization.domain.model.valueobjects.MovementType;
@@ -19,6 +23,7 @@ import pe.greenminds.ecomind_backend.monetization.domain.repositories.GemPurchas
 import pe.greenminds.ecomind_backend.shared.application.result.ApplicationError;
 import pe.greenminds.ecomind_backend.shared.application.result.Result;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -29,17 +34,20 @@ public class GemPurchaseCommandServiceImpl implements GemPurchaseCommandService 
     private final GemPackageRepository gemPackageRepository;
     private final GemMovementRepository gemMovementRepository;
     private final ProfileMonetizationExternalService profileMonetizationExternalService;
+    private final PaymentGateway paymentGateway;
 
     public GemPurchaseCommandServiceImpl(
             GemPurchaseRepository gemPurchaseRepository,
             GemPackageRepository gemPackageRepository,
             GemMovementRepository gemMovementRepository,
-            ProfileMonetizationExternalService profileMonetizationExternalService
+            ProfileMonetizationExternalService profileMonetizationExternalService,
+            PaymentGateway paymentGateway
     ) {
         this.gemPurchaseRepository = gemPurchaseRepository;
         this.gemPackageRepository = gemPackageRepository;
         this.gemMovementRepository = gemMovementRepository;
         this.profileMonetizationExternalService = profileMonetizationExternalService;
+        this.paymentGateway = paymentGateway;
     }
 
     @Transactional
@@ -118,8 +126,64 @@ public class GemPurchaseCommandServiceImpl implements GemPurchaseCommandService 
             );
         }
 
+        return approveAndCredit(gemPurchase.get(), gemPackage.get());
+    }
+
+    @Transactional
+    @Override
+    public Result<GemPurchase, ApplicationError> handle(PayGemPurchaseCommand command) {
+        var gemPurchase = gemPurchaseRepository.findById(command.gemPurchaseId());
+        if (gemPurchase.isEmpty()) {
+            return Result.failure(
+                    ApplicationError.notFound("GemPurchase", command.gemPurchaseId().toString())
+            );
+        }
+
+        if (gemPurchase.get().getPaymentStatus() != PaymentStatus.PENDING) {
+            return Result.failure(
+                    ApplicationError.businessRuleViolation("GemPurchase payment", "Gem purchase is not PENDING")
+            );
+        }
+
+        var gemPackage = gemPackageRepository.findById(gemPurchase.get().getPackageId());
+        if (gemPackage.isEmpty()) {
+            return Result.failure(
+                    ApplicationError.notFound("GemPackage", gemPurchase.get().getPackageId().toString())
+            );
+        }
+
+        // Charge the real money through the payment gateway (Culqi).
+        var amountInCents = gemPurchase.get().getAmountPaid()
+                .multiply(BigDecimal.valueOf(100))
+                .intValueExact();
+        var chargeResult = paymentGateway.charge(new ChargeRequest(
+                amountInCents,
+                gemPackage.get().getCurrency(),
+                command.email(),
+                command.sourceToken(),
+                "EcoMind - " + gemPackage.get().getName()
+        ));
+
+        if (!chargeResult.approved()) {
+            gemPurchase.get().reject();
+            gemPurchaseRepository.save(gemPurchase.get());
+            return Result.failure(
+                    ApplicationError.businessRuleViolation("Payment declined", chargeResult.message())
+            );
+        }
+
+        // Payment approved: credit the gems and record the movement atomically.
+        return approveAndCredit(gemPurchase.get(), gemPackage.get());
+    }
+
+    /**
+     * Marks a PENDING gem purchase as APPROVED, credits the user's gem balance and
+     * records the PURCHASE gem movement. Runs inside the caller's transaction, so any
+     * failure (e.g. the user no longer exists) rolls everything back.
+     */
+    private Result<GemPurchase, ApplicationError> approveAndCredit(GemPurchase gemPurchase, GemPackage gemPackage) {
         try {
-            gemPurchase.get().approve();
+            gemPurchase.approve();
         } catch (IllegalStateException e) {
             return Result.failure(
                     ApplicationError.businessRuleViolation("GemPurchase approval", e.getMessage())
@@ -127,19 +191,19 @@ public class GemPurchaseCommandServiceImpl implements GemPurchaseCommandService 
         }
 
         var creditResult = profileMonetizationExternalService.creditGems(
-                gemPurchase.get().getUserId(),
-                gemPackage.get().getGemAmount()
+                gemPurchase.getUserId(),
+                gemPackage.getGemAmount()
         );
         if (creditResult instanceof Result.Failure<Void, ApplicationError> failure) {
             return Result.failure(failure.error());
         }
 
-        var savedGemPurchase = gemPurchaseRepository.save(gemPurchase.get());
+        var savedGemPurchase = gemPurchaseRepository.save(gemPurchase);
 
         gemMovementRepository.save(new GemMovement(
                 savedGemPurchase.getUserId(),
                 MovementType.PURCHASE,
-                gemPackage.get().getGemAmount(),
+                gemPackage.getGemAmount(),
                 MovementOrigin.GEM_PACKAGE,
                 savedGemPurchase.getPackageId()
         ));

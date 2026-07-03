@@ -21,9 +21,11 @@ import pe.greenminds.ecomind_backend.monetization.domain.model.queries.GetGemPur
 import pe.greenminds.ecomind_backend.monetization.interfaces.rest.resources.CreateGemPurchaseCheckoutResource;
 import pe.greenminds.ecomind_backend.monetization.interfaces.rest.resources.CreateGemPurchaseResource;
 import pe.greenminds.ecomind_backend.monetization.interfaces.rest.resources.GemPurchaseResource;
+import pe.greenminds.ecomind_backend.monetization.interfaces.rest.resources.PayGemPurchaseResource;
 import pe.greenminds.ecomind_backend.monetization.interfaces.rest.transform.CreateGemPurchaseCheckoutCommandFromResourceAssembler;
 import pe.greenminds.ecomind_backend.monetization.interfaces.rest.transform.CreateGemPurchaseCommandFromResourceAssembler;
 import pe.greenminds.ecomind_backend.monetization.interfaces.rest.transform.GemPurchaseResourceFromEntityAssembler;
+import pe.greenminds.ecomind_backend.monetization.interfaces.rest.transform.PayGemPurchaseCommandFromResourceAssembler;
 import pe.greenminds.ecomind_backend.shared.application.result.ApplicationError;
 import pe.greenminds.ecomind_backend.shared.interfaces.rest.transform.ErrorResponseAssembler;
 import pe.greenminds.ecomind_backend.shared.interfaces.rest.transform.ResponseEntityAssembler;
@@ -89,6 +91,31 @@ public class GemPurchaseController {
                 result,
                 GemPurchaseResourceFromEntityAssembler::toResourceFromEntity,
                 HttpStatus.CREATED
+        );
+    }
+
+    @PostMapping("/{gemPurchaseId}/pay")
+    @Operation(
+            summary = "Pay a gem purchase through Culqi",
+            description = "Charges the PENDING gem purchase through the payment gateway using the client-side token. On approval it credits the gems and records the movement atomically; on decline it marks the purchase REJECTED."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Payment approved and gems credited",
+                    content = @Content(schema = @Schema(implementation = GemPurchaseResource.class))
+            ),
+            @ApiResponse(responseCode = "404", description = "Gem purchase or package not found"),
+            @ApiResponse(responseCode = "422", description = "Purchase not PENDING or payment declined")
+    })
+    public ResponseEntity<?> payGemPurchase(@PathVariable Long gemPurchaseId, @Valid @RequestBody PayGemPurchaseResource resource) {
+        var command = PayGemPurchaseCommandFromResourceAssembler.toCommandFromResource(gemPurchaseId, resource);
+        var result = gemPurchaseCommandService.handle(command);
+
+        return ResponseEntityAssembler.toResponseEntityFromResult(
+                result,
+                GemPurchaseResourceFromEntityAssembler::toResourceFromEntity,
+                HttpStatus.OK
         );
     }
 
