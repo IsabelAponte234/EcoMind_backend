@@ -9,7 +9,6 @@ public class GemPurchasePersistenceAssembler {
     private GemPurchasePersistenceAssembler() {}
 
     public static GemPurchase toDomainFromPersistence(GemPurchasePersistenceEntity entity) {
-        // Legacy rows created before payment method tracking default to CARD.
         var paymentMethod = entity.getPaymentMethod() != null ? entity.getPaymentMethod() : PaymentMethod.CARD;
         var gemPurchase = new GemPurchase(
                 entity.getUserId(),

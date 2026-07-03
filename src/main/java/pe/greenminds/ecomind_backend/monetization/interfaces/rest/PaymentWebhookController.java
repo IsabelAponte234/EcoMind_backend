@@ -13,13 +13,6 @@ import pe.greenminds.ecomind_backend.monetization.domain.model.commands.ConfirmG
 
 import java.util.Map;
 
-/**
- * Receives asynchronous payment notifications (webhooks) from the payment gateways.
- *
- * <p>Webhooks are server-to-server: the gateway (not the browser) tells us the final
- * outcome of a charge. This confirms the matching gem purchase idempotently — if the
- * synchronous {@code /pay} already settled it, the webhook is a harmless no-op.</p>
- */
 @RestController
 @RequestMapping(value = "/api/v1/webhooks", produces = MediaType.APPLICATION_JSON_VALUE)
 @Tag(name = "Payment Webhooks", description = "Server-to-server payment confirmations")
@@ -42,7 +35,6 @@ public class PaymentWebhookController {
             var approved = isSuccess(payload);
             gemPurchaseCommandService.handle(new ConfirmGemPurchaseByChargeCommand(chargeId, approved));
         }
-        // Acknowledge regardless: a non-200 makes the gateway keep retrying.
         return ResponseEntity.ok(Map.of("received", "true"));
     }
 

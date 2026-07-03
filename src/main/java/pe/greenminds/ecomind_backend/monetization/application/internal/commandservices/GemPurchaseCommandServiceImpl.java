@@ -155,7 +155,6 @@ public class GemPurchaseCommandServiceImpl implements GemPurchaseCommandService 
             );
         }
 
-        // Pick the gateway that handles this purchase's payment method (Culqi for card/yape, PayPal for paypal).
         var gateway = paymentGatewayResolver.resolve(gemPurchase.get().getPaymentMethod());
         if (gateway.isEmpty()) {
             return Result.failure(
@@ -166,7 +165,6 @@ public class GemPurchaseCommandServiceImpl implements GemPurchaseCommandService 
             );
         }
 
-        // Charge the real money through the selected payment gateway.
         var amountInCents = gemPurchase.get().getAmountPaid()
                 .multiply(BigDecimal.valueOf(100))
                 .intValueExact();
@@ -186,17 +184,10 @@ public class GemPurchaseCommandServiceImpl implements GemPurchaseCommandService 
             );
         }
 
-        // Payment approved: store the gateway charge reference, then credit the gems
-        // and record the movement atomically.
         gemPurchase.get().assignPaymentReference(chargeResult.chargeId());
         return approveAndCredit(gemPurchase.get(), gemPackage.get());
     }
 
-    /**
-     * Marks a PENDING gem purchase as APPROVED, credits the user's gem balance and
-     * records the PURCHASE gem movement. Runs inside the caller's transaction, so any
-     * failure (e.g. the user no longer exists) rolls everything back.
-     */
     private Result<GemPurchase, ApplicationError> approveAndCredit(GemPurchase gemPurchase, GemPackage gemPackage) {
         try {
             gemPurchase.approve();
@@ -257,8 +248,6 @@ public class GemPurchaseCommandServiceImpl implements GemPurchaseCommandService 
             );
         }
 
-        // Idempotent: if the purchase was already approved/rejected (e.g. the
-        // synchronous /pay already handled it), the webhook is a no-op.
         if (gemPurchase.get().getPaymentStatus() != PaymentStatus.PENDING) {
             return Result.success(gemPurchase.get());
         }
