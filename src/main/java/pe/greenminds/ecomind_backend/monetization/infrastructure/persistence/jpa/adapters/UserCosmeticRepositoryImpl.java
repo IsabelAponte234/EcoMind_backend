@@ -32,6 +32,11 @@ public class UserCosmeticRepositoryImpl implements UserCosmeticRepository {
     }
 
     @Override
+    public List<UserCosmetic> findByUserId(Long userId) {
+        return userCosmeticPersistenceRepository.findByUserId(userId).stream().map(UserCosmeticPersistenceAssembler::toDomainFromPersistence).toList();
+    }
+
+    @Override
     public UserCosmetic save(UserCosmetic userCosmetic) {
         boolean isNew = userCosmetic.getId() == null;
         var savedEntity = userCosmeticPersistenceRepository.save(UserCosmeticPersistenceAssembler.toPersistenceFromDomain(userCosmetic));
@@ -52,5 +57,10 @@ public class UserCosmeticRepositoryImpl implements UserCosmeticRepository {
     @Override
     public boolean existsById(Long id) {
         return userCosmeticPersistenceRepository.existsById(id);
+    }
+
+    @Override
+    public boolean existsByUserIdAndCosmeticId(Long userId, Long cosmeticId) {
+        return userCosmeticPersistenceRepository.existsByUserIdAndCosmeticId(userId, cosmeticId);
     }
 }

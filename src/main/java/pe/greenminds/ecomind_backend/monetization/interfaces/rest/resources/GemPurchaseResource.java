@@ -40,6 +40,9 @@ public record GemPurchaseResource(
     String paymentStatus,
 
     @Schema(description = "Payment reference", example = "PAY-123456")
-    String paymentReference
+    String paymentReference,
+
+    @Schema(description = "Payment method used", example = "card")
+    String paymentMethod
 ) {
 }

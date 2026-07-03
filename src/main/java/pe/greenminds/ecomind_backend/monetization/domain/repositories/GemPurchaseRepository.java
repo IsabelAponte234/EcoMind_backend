@@ -8,6 +8,8 @@ import java.util.Optional;
 public interface GemPurchaseRepository {
     Optional<GemPurchase> findById(Long id);
     List<GemPurchase> findAll();
+    List<GemPurchase> findByUserId(Long userId);
+    Optional<GemPurchase> findByPaymentReference(String paymentReference);
     GemPurchase save(GemPurchase gemPurchase);
     void deleteById(Long id);
     boolean existsById(Long id);
