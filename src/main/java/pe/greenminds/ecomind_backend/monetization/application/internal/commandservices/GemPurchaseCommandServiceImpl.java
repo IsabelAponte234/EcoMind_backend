@@ -9,7 +9,7 @@ import pe.greenminds.ecomind_backend.monetization.domain.model.commands.CreateGe
 import pe.greenminds.ecomind_backend.monetization.domain.model.commands.CreateGemPurchaseCommand;
 import pe.greenminds.ecomind_backend.monetization.application.outboundservices.external.ProfileMonetizationExternalService;
 import pe.greenminds.ecomind_backend.monetization.application.outboundservices.gateway.ChargeRequest;
-import pe.greenminds.ecomind_backend.monetization.application.outboundservices.gateway.PaymentGateway;
+import pe.greenminds.ecomind_backend.monetization.application.outboundservices.gateway.PaymentGatewayResolver;
 import pe.greenminds.ecomind_backend.monetization.domain.model.aggregates.GemMovement;
 import pe.greenminds.ecomind_backend.monetization.domain.model.aggregates.GemPackage;
 import pe.greenminds.ecomind_backend.monetization.domain.model.commands.PayGemPurchaseCommand;
@@ -34,20 +34,20 @@ public class GemPurchaseCommandServiceImpl implements GemPurchaseCommandService 
     private final GemPackageRepository gemPackageRepository;
     private final GemMovementRepository gemMovementRepository;
     private final ProfileMonetizationExternalService profileMonetizationExternalService;
-    private final PaymentGateway paymentGateway;
+    private final PaymentGatewayResolver paymentGatewayResolver;
 
     public GemPurchaseCommandServiceImpl(
             GemPurchaseRepository gemPurchaseRepository,
             GemPackageRepository gemPackageRepository,
             GemMovementRepository gemMovementRepository,
             ProfileMonetizationExternalService profileMonetizationExternalService,
-            PaymentGateway paymentGateway
+            PaymentGatewayResolver paymentGatewayResolver
     ) {
         this.gemPurchaseRepository = gemPurchaseRepository;
         this.gemPackageRepository = gemPackageRepository;
         this.gemMovementRepository = gemMovementRepository;
         this.profileMonetizationExternalService = profileMonetizationExternalService;
-        this.paymentGateway = paymentGateway;
+        this.paymentGatewayResolver = paymentGatewayResolver;
     }
 
     @Transactional
@@ -154,11 +154,22 @@ public class GemPurchaseCommandServiceImpl implements GemPurchaseCommandService 
             );
         }
 
-        // Charge the real money through the payment gateway (Culqi).
+        // Pick the gateway that handles this purchase's payment method (Culqi for card/yape, PayPal for paypal).
+        var gateway = paymentGatewayResolver.resolve(gemPurchase.get().getPaymentMethod());
+        if (gateway.isEmpty()) {
+            return Result.failure(
+                    ApplicationError.businessRuleViolation(
+                            "GemPurchase payment",
+                            "No payment gateway available for method " + gemPurchase.get().getPaymentMethod()
+                    )
+            );
+        }
+
+        // Charge the real money through the selected payment gateway.
         var amountInCents = gemPurchase.get().getAmountPaid()
                 .multiply(BigDecimal.valueOf(100))
                 .intValueExact();
-        var chargeResult = paymentGateway.charge(new ChargeRequest(
+        var chargeResult = gateway.get().charge(new ChargeRequest(
                 amountInCents,
                 gemPackage.get().getCurrency(),
                 command.email(),

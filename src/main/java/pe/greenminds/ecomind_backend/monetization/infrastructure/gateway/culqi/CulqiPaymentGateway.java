@@ -8,6 +8,7 @@ import org.springframework.web.client.RestClientResponseException;
 import pe.greenminds.ecomind_backend.monetization.application.outboundservices.gateway.ChargeRequest;
 import pe.greenminds.ecomind_backend.monetization.application.outboundservices.gateway.ChargeResult;
 import pe.greenminds.ecomind_backend.monetization.application.outboundservices.gateway.PaymentGateway;
+import pe.greenminds.ecomind_backend.monetization.domain.model.valueobjects.PaymentMethod;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -32,6 +33,11 @@ public class CulqiPaymentGateway implements PaymentGateway {
     ) {
         this.secretKey = secretKey;
         this.restClient = RestClient.builder().baseUrl(baseUrl).build();
+    }
+
+    @Override
+    public boolean supports(PaymentMethod method) {
+        return method == PaymentMethod.CARD || method == PaymentMethod.YAPE;
     }
 
     @Override
