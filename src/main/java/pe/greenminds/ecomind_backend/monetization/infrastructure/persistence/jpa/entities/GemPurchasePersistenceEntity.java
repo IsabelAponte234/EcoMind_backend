@@ -1,6 +1,7 @@
 package pe.greenminds.ecomind_backend.monetization.infrastructure.persistence.jpa.entities;
 
 import jakarta.persistence.*;
+import pe.greenminds.ecomind_backend.monetization.domain.model.valueobjects.PaymentMethod;
 import pe.greenminds.ecomind_backend.monetization.domain.model.valueobjects.PaymentStatus;
 import pe.greenminds.ecomind_backend.shared.infrastructure.persistence.jpa.entities.AuditableAbstractPersistenceEntity;
 
@@ -30,6 +31,10 @@ public class GemPurchasePersistenceEntity extends AuditableAbstractPersistenceEn
     @Column(name = "payment_reference")
     private String paymentReference;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_method")
+    private PaymentMethod paymentMethod;
+
     public Long getUserId() { return userId; }
     public void setUserId(Long userId) { this.userId = userId; }
 
@@ -47,4 +52,7 @@ public class GemPurchasePersistenceEntity extends AuditableAbstractPersistenceEn
 
     public String getPaymentReference() { return paymentReference; }
     public void setPaymentReference(String paymentReference) { this.paymentReference = paymentReference; }
+
+    public PaymentMethod getPaymentMethod() { return paymentMethod; }
+    public void setPaymentMethod(PaymentMethod paymentMethod) { this.paymentMethod = paymentMethod; }
 }

@@ -5,6 +5,7 @@ import pe.greenminds.ecomind_backend.monetization.application.queryservices.User
 import pe.greenminds.ecomind_backend.monetization.domain.model.aggregates.UserCosmetic;
 import pe.greenminds.ecomind_backend.monetization.domain.model.queries.GetAllUserCosmeticsQuery;
 import pe.greenminds.ecomind_backend.monetization.domain.model.queries.GetUserCosmeticByIdQuery;
+import pe.greenminds.ecomind_backend.monetization.domain.model.queries.GetUserCosmeticsByUserIdQuery;
 import pe.greenminds.ecomind_backend.monetization.domain.repositories.UserCosmeticRepository;
 
 import java.util.List;
@@ -27,5 +28,10 @@ public class UserCosmeticQueryServiceImpl implements UserCosmeticQueryService {
     @Override
     public List<UserCosmetic> handle(GetAllUserCosmeticsQuery query) {
         return userCosmeticRepository.findAll();
+    }
+
+    @Override
+    public List<UserCosmetic> handle(GetUserCosmeticsByUserIdQuery query) {
+        return userCosmeticRepository.findByUserId(query.userId());
     }
 }

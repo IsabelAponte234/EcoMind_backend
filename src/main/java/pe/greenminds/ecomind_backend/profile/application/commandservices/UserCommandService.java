@@ -10,5 +10,7 @@ public interface UserCommandService {
     Result<User, ApplicationError> handle(UpdateUserCommand command);
     Result<User, ApplicationError> handle(UpdateUserCommitmentCommand command);
     Result<User, ApplicationError> handle(UpdateUserStatsCommand command);
+    Result<User, ApplicationError> handle(CreditUserGemsCommand command);
+    Result<User, ApplicationError> handle(SpendUserGemsCommand command);
     Result<User, ApplicationError> handle(DeleteUserCommand command);
 }
