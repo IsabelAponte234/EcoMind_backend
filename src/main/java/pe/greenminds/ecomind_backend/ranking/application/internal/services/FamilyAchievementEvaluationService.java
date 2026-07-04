@@ -34,9 +34,8 @@ public class FamilyAchievementEvaluationService {
     }
 
     public List<FamilyAchievementEntity> evaluateAndUnlock(Long familyId) {
-        var memberUserIds = profileRankingExternalService.fetchFamilyMemberUserIds(familyId);
         var totalEcopoints = profileRankingExternalService.fetchFamilyEcopointsTotal(familyId);
-        var completedCollabQuests = questsRankingExternalService.countCompletedCollabQuestsForUserIds(memberUserIds);
+        var completedFamilyPlans = questsRankingExternalService.countCompletedFamilyPlans(familyId);
         var position = familyRankingService.findFamilyPosition(familyId)
                 .map(entry -> entry.position())
                 .orElse(Integer.MAX_VALUE);
@@ -45,7 +44,7 @@ public class FamilyAchievementEvaluationService {
             if (familyAchievementRepository.existsByFamilyIdAndAchievementId(familyId, achievement.getId())) {
                 continue;
             }
-            if (isUnlocked(achievement, totalEcopoints, completedCollabQuests, position)) {
+            if (isUnlocked(achievement, totalEcopoints, completedFamilyPlans, position)) {
                 familyAchievementRepository.save(new FamilyAchievementEntity(familyId, achievement.getId()));
             }
         }
@@ -53,11 +52,11 @@ public class FamilyAchievementEvaluationService {
         return familyAchievementRepository.findByFamilyId(familyId);
     }
 
-    private boolean isUnlocked(AchievementEntity achievement, int totalEcopoints, int completedCollabQuests, int position) {
+    private boolean isUnlocked(AchievementEntity achievement, int totalEcopoints, int completedFamilyPlans, int position) {
         var threshold = achievement.getThresholdValue() == null ? 0 : achievement.getThresholdValue();
         return switch (achievement.getType()) {
-            case FIRST_COLLAB_QUEST -> completedCollabQuests >= 1;
-            case COLLAB_QUESTS_COUNT -> completedCollabQuests >= threshold;
+            case FIRST_FAMILY_PLAN -> completedFamilyPlans >= 1;
+            case FAMILY_PLANS_COUNT -> completedFamilyPlans >= threshold;
             case ECOPOINTS_THRESHOLD -> totalEcopoints >= threshold;
             case WEEKLY_TOP3 -> position >= 1 && position <= 3;
         };

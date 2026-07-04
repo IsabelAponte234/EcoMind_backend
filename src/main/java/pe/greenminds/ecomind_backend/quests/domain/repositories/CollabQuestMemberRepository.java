@@ -23,9 +23,4 @@ public interface CollabQuestMemberRepository {
             Long questId,
             List<CollabQuestStatus> sessionStatuses
     );
-    List<CollabQuestMember> findByUserIdInAndStatusAndSessionStatus(
-            List<Long> userIds,
-            CollabMemberStatus status,
-            CollabQuestStatus sessionStatus
-    );
 }

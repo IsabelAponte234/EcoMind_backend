@@ -55,19 +55,4 @@ public interface CollabQuestMemberPersistenceRepository
             @Param("questId") Long questId,
             @Param("sessionStatuses") List<CollabQuestStatus> sessionStatuses
     );
-
-    @Query("""
-            select member
-            from CollabQuestMemberPersistenceEntity member
-            join CollabQuestSessionPersistenceEntity session
-                on session.id = member.sessionId
-            where member.userId in :userIds
-                and member.status = :memberStatus
-                and session.status = :sessionStatus
-            """)
-    List<CollabQuestMemberPersistenceEntity> findByUserIdInAndStatusAndSessionStatus(
-            @Param("userIds") List<Long> userIds,
-            @Param("memberStatus") CollabMemberStatus memberStatus,
-            @Param("sessionStatus") CollabQuestStatus sessionStatus
-    );
 }
