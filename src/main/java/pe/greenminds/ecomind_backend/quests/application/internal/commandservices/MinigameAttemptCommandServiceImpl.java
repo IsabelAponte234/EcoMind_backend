@@ -175,7 +175,7 @@ public class MinigameAttemptCommandServiceImpl implements MinigameAttemptCommand
                         savedAttempt.getUserId(),
                         savedAttempt.getGivenGems(),
                         savedAttempt.getGivenEcopoints(),
-                        MovementOrigin.MINIGAME,
+                        MovementOrigin.QUEST,
                         savedAttempt.getId()
                 );
             }
