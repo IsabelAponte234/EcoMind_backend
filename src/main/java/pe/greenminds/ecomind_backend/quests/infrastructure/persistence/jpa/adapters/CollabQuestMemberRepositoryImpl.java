@@ -107,4 +107,17 @@ public class CollabQuestMemberRepositoryImpl implements CollabQuestMemberReposit
                 .map(CollabQuestMemberPersistenceAssembler::toDomainFromPersistence)
                 .toList();
     }
+
+    @Override
+    public List<CollabQuestMember> findByUserIdInAndStatusAndSessionStatus(
+            List<Long> userIds,
+            CollabMemberStatus status,
+            CollabQuestStatus sessionStatus
+    ) {
+        return collabQuestMemberPersistenceRepository
+                .findByUserIdInAndStatusAndSessionStatus(userIds, status, sessionStatus)
+                .stream()
+                .map(CollabQuestMemberPersistenceAssembler::toDomainFromPersistence)
+                .toList();
+    }
 }
